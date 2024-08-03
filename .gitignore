@@ -1,0 +1,53 @@
+# Arduino Sketch build files
+*.elf
+*.bin
+*.hex
+*.eep
+*.o
+*.a
+*.d
+
+# Arduino libraries
+libraries/
+
+# Arduino build folders
+/build/
+/.build/
+
+# MacOS files
+.DS_Store
+
+# Windows files
+Thumbs.db
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# VIM files
+*.swn
+
+# Compiled dynamic libraries
+*.so
+
+# Compiled object files
+*.obj
+*.pyc
+*.pyo
+*.pyd
+
+# IDE directories
+.idea/
+.vscode/
+
+# Node modules directory
+node_modules/
+
