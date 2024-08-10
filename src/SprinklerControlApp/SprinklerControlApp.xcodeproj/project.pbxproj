@@ -1,0 +1,607 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		14A22B6B2C628575005EEC51 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A22B6A2C628575005EEC51 /* AppDelegate.swift */; };
+		14A22B6D2C628575005EEC51 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A22B6C2C628575005EEC51 /* SceneDelegate.swift */; };
+		14A22B6F2C628575005EEC51 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A22B6E2C628575005EEC51 /* ViewController.swift */; };
+		14A22B722C628575005EEC51 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 14A22B702C628575005EEC51 /* Main.storyboard */; };
+		14A22B742C628577005EEC51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 14A22B732C628577005EEC51 /* Assets.xcassets */; };
+		14A22B772C628577005EEC51 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 14A22B752C628577005EEC51 /* LaunchScreen.storyboard */; };
+		14A22B822C628577005EEC51 /* SprinklerControlAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A22B812C628577005EEC51 /* SprinklerControlAppTests.swift */; };
+		14A22B8C2C628577005EEC51 /* SprinklerControlAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A22B8B2C628577005EEC51 /* SprinklerControlAppUITests.swift */; };
+		14A22B8E2C628577005EEC51 /* SprinklerControlAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A22B8D2C628577005EEC51 /* SprinklerControlAppUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		14A22B7E2C628577005EEC51 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14A22B5F2C628575005EEC51 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14A22B662C628575005EEC51;
+			remoteInfo = SprinklerControlApp;
+		};
+		14A22B882C628577005EEC51 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14A22B5F2C628575005EEC51 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14A22B662C628575005EEC51;
+			remoteInfo = SprinklerControlApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		14A22B672C628575005EEC51 /* SprinklerControlApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SprinklerControlApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		14A22B6A2C628575005EEC51 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		14A22B6C2C628575005EEC51 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		14A22B6E2C628575005EEC51 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		14A22B712C628575005EEC51 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		14A22B732C628577005EEC51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		14A22B762C628577005EEC51 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		14A22B782C628577005EEC51 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		14A22B7D2C628577005EEC51 /* SprinklerControlAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SprinklerControlAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		14A22B812C628577005EEC51 /* SprinklerControlAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SprinklerControlAppTests.swift; sourceTree = "<group>"; };
+		14A22B872C628577005EEC51 /* SprinklerControlAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SprinklerControlAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		14A22B8B2C628577005EEC51 /* SprinklerControlAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SprinklerControlAppUITests.swift; sourceTree = "<group>"; };
+		14A22B8D2C628577005EEC51 /* SprinklerControlAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SprinklerControlAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		14A22B642C628575005EEC51 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14A22B7A2C628577005EEC51 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14A22B842C628577005EEC51 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14A22B5E2C628575005EEC51 = {
+			isa = PBXGroup;
+			children = (
+				14A22B692C628575005EEC51 /* SprinklerControlApp */,
+				14A22B802C628577005EEC51 /* SprinklerControlAppTests */,
+				14A22B8A2C628577005EEC51 /* SprinklerControlAppUITests */,
+				14A22B682C628575005EEC51 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		14A22B682C628575005EEC51 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				14A22B672C628575005EEC51 /* SprinklerControlApp.app */,
+				14A22B7D2C628577005EEC51 /* SprinklerControlAppTests.xctest */,
+				14A22B872C628577005EEC51 /* SprinklerControlAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		14A22B692C628575005EEC51 /* SprinklerControlApp */ = {
+			isa = PBXGroup;
+			children = (
+				14A22B6A2C628575005EEC51 /* AppDelegate.swift */,
+				14A22B6C2C628575005EEC51 /* SceneDelegate.swift */,
+				14A22B6E2C628575005EEC51 /* ViewController.swift */,
+				14A22B702C628575005EEC51 /* Main.storyboard */,
+				14A22B732C628577005EEC51 /* Assets.xcassets */,
+				14A22B752C628577005EEC51 /* LaunchScreen.storyboard */,
+				14A22B782C628577005EEC51 /* Info.plist */,
+			);
+			path = SprinklerControlApp;
+			sourceTree = "<group>";
+		};
+		14A22B802C628577005EEC51 /* SprinklerControlAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				14A22B812C628577005EEC51 /* SprinklerControlAppTests.swift */,
+			);
+			path = SprinklerControlAppTests;
+			sourceTree = "<group>";
+		};
+		14A22B8A2C628577005EEC51 /* SprinklerControlAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				14A22B8B2C628577005EEC51 /* SprinklerControlAppUITests.swift */,
+				14A22B8D2C628577005EEC51 /* SprinklerControlAppUITestsLaunchTests.swift */,
+			);
+			path = SprinklerControlAppUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		14A22B662C628575005EEC51 /* SprinklerControlApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14A22B912C628577005EEC51 /* Build configuration list for PBXNativeTarget "SprinklerControlApp" */;
+			buildPhases = (
+				14A22B632C628575005EEC51 /* Sources */,
+				14A22B642C628575005EEC51 /* Frameworks */,
+				14A22B652C628575005EEC51 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SprinklerControlApp;
+			productName = SprinklerControlApp;
+			productReference = 14A22B672C628575005EEC51 /* SprinklerControlApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		14A22B7C2C628577005EEC51 /* SprinklerControlAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14A22B942C628577005EEC51 /* Build configuration list for PBXNativeTarget "SprinklerControlAppTests" */;
+			buildPhases = (
+				14A22B792C628577005EEC51 /* Sources */,
+				14A22B7A2C628577005EEC51 /* Frameworks */,
+				14A22B7B2C628577005EEC51 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				14A22B7F2C628577005EEC51 /* PBXTargetDependency */,
+			);
+			name = SprinklerControlAppTests;
+			productName = SprinklerControlAppTests;
+			productReference = 14A22B7D2C628577005EEC51 /* SprinklerControlAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		14A22B862C628577005EEC51 /* SprinklerControlAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14A22B972C628577005EEC51 /* Build configuration list for PBXNativeTarget "SprinklerControlAppUITests" */;
+			buildPhases = (
+				14A22B832C628577005EEC51 /* Sources */,
+				14A22B842C628577005EEC51 /* Frameworks */,
+				14A22B852C628577005EEC51 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				14A22B892C628577005EEC51 /* PBXTargetDependency */,
+			);
+			name = SprinklerControlAppUITests;
+			productName = SprinklerControlAppUITests;
+			productReference = 14A22B872C628577005EEC51 /* SprinklerControlAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		14A22B5F2C628575005EEC51 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1420;
+				LastUpgradeCheck = 1420;
+				TargetAttributes = {
+					14A22B662C628575005EEC51 = {
+						CreatedOnToolsVersion = 14.2;
+					};
+					14A22B7C2C628577005EEC51 = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = 14A22B662C628575005EEC51;
+					};
+					14A22B862C628577005EEC51 = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = 14A22B662C628575005EEC51;
+					};
+				};
+			};
+			buildConfigurationList = 14A22B622C628575005EEC51 /* Build configuration list for PBXProject "SprinklerControlApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 14A22B5E2C628575005EEC51;
+			productRefGroup = 14A22B682C628575005EEC51 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				14A22B662C628575005EEC51 /* SprinklerControlApp */,
+				14A22B7C2C628577005EEC51 /* SprinklerControlAppTests */,
+				14A22B862C628577005EEC51 /* SprinklerControlAppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		14A22B652C628575005EEC51 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14A22B772C628577005EEC51 /* LaunchScreen.storyboard in Resources */,
+				14A22B742C628577005EEC51 /* Assets.xcassets in Resources */,
+				14A22B722C628575005EEC51 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14A22B7B2C628577005EEC51 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14A22B852C628577005EEC51 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		14A22B632C628575005EEC51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14A22B6F2C628575005EEC51 /* ViewController.swift in Sources */,
+				14A22B6B2C628575005EEC51 /* AppDelegate.swift in Sources */,
+				14A22B6D2C628575005EEC51 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14A22B792C628577005EEC51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14A22B822C628577005EEC51 /* SprinklerControlAppTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14A22B832C628577005EEC51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14A22B8C2C628577005EEC51 /* SprinklerControlAppUITests.swift in Sources */,
+				14A22B8E2C628577005EEC51 /* SprinklerControlAppUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		14A22B7F2C628577005EEC51 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14A22B662C628575005EEC51 /* SprinklerControlApp */;
+			targetProxy = 14A22B7E2C628577005EEC51 /* PBXContainerItemProxy */;
+		};
+		14A22B892C628577005EEC51 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14A22B662C628575005EEC51 /* SprinklerControlApp */;
+			targetProxy = 14A22B882C628577005EEC51 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		14A22B702C628575005EEC51 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				14A22B712C628575005EEC51 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		14A22B752C628577005EEC51 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				14A22B762C628577005EEC51 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		14A22B8F2C628577005EEC51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		14A22B902C628577005EEC51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		14A22B922C628577005EEC51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 893NP59R5R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SprinklerControlApp/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.SprinklerControlApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		14A22B932C628577005EEC51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 893NP59R5R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SprinklerControlApp/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.SprinklerControlApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		14A22B952C628577005EEC51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 893NP59R5R;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.SprinklerControlAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SprinklerControlApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SprinklerControlApp";
+			};
+			name = Debug;
+		};
+		14A22B962C628577005EEC51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 893NP59R5R;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.SprinklerControlAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SprinklerControlApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SprinklerControlApp";
+			};
+			name = Release;
+		};
+		14A22B982C628577005EEC51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 893NP59R5R;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.SprinklerControlAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SprinklerControlApp;
+			};
+			name = Debug;
+		};
+		14A22B992C628577005EEC51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 893NP59R5R;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.SprinklerControlAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SprinklerControlApp;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		14A22B622C628575005EEC51 /* Build configuration list for PBXProject "SprinklerControlApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14A22B8F2C628577005EEC51 /* Debug */,
+				14A22B902C628577005EEC51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14A22B912C628577005EEC51 /* Build configuration list for PBXNativeTarget "SprinklerControlApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14A22B922C628577005EEC51 /* Debug */,
+				14A22B932C628577005EEC51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14A22B942C628577005EEC51 /* Build configuration list for PBXNativeTarget "SprinklerControlAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14A22B952C628577005EEC51 /* Debug */,
+				14A22B962C628577005EEC51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14A22B972C628577005EEC51 /* Build configuration list for PBXNativeTarget "SprinklerControlAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14A22B982C628577005EEC51 /* Debug */,
+				14A22B992C628577005EEC51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 14A22B5F2C628575005EEC51 /* Project object */;
+}
