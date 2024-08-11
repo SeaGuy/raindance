@@ -73,82 +73,71 @@ void loop() {
       //Serial.println("New client still connected");
       if (client.available()) {
         Serial.println("New client connected");
+        
+
         // char c = client.read();
         size = client.read(buf, 256);
-        if (size > 0) {
+        strncpy(command, buf + 5, 3);
+        command[3] = '\0';
+        buf[15] = '\0';
+        client.println("HTTP/1.1 200 OK");
+        client.println("Content-Type: text/html");
+        client.println("Content-Type: text/html");
+        client.println();
+        client.println("<!DOCTYPE HTML>");
+        client.println("<html>");
+        client.println("<head><title>Arduino Sprinkler Control</title></head>");
+        client.println("<body>");
+
+        if (size > 0 && ( (strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0) || (strcmp(command, "DIS") == 0) )) {
           Serial.print("client.read() size: ");
           Serial.println(size);
+          
           Serial.print("client.read() buf: ");
           Serial.println(buf);
-          Serial.println('\n\r');
 
           size_t length = strlen(buf);
           Serial.print("strlen(buf): ");
           Serial.println(length);
 
-          strncpy(command, buf + 5, 3);
-          command[3] = '\0';
-
           length = strlen(command);
           Serial.print("strlen(command): ");
           Serial.println(length);
 
-        
           Serial.print("command: ");
           Serial.println(command);
-          Serial.println('\n\r');
+          Serial.println();
 
           if (strcmp(command, "ONN") == 0) {
                 digitalWrite(relayPin, HIGH);
-                // client.print("Sprinkler is ON");
+                client.println("<h1>Sprinkler is ON</h1>");
               } else if (strcmp(command, "OFF") == 0) {
                 digitalWrite(relayPin, LOW);
-                // client.print("Sprinkler is OFF");
+                client.println("<h1>Sprinkler is OFF</h1>");
+              }
+              else if (strcmp(command, "DIS") == 0) {
+                client.println("<h1>Sprinkler is DISCONNECTED</h1>");
+                //client.stop();
               }
 
+          client.println("</body>");
+          client.println("</html>");
+            
+          // Add a blank line to properly terminate the response
+          client.println();
 
+          // Stop the client
+          client.stop();
+        
         }
-
-        char c; /////////////////////////////
-        Serial.write(c);
-        if (c == '\n') {
-          Serial.println(">>>>>>>>>> \n detected! <<<<<<<<<<<<");
-          Serial.print(">>>>>>>>>> currentLine.length() <<<<<<<<<<<<");
-          Serial.println(currentLine.length());
-          Serial.println(currentLine);
-
-          if (currentLine.length() != 0) {
-            // Send HTTP response
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println();
-            // Handle request
-            if (client.available()) {
-              Serial.println(" ********* client ready to write to relay *********");
-              String request = client.readStringUntil('\r');
-              Serial.println(request);
-              if (request.indexOf("/on") != -1) {
-                digitalWrite(relayPin, HIGH);
-                client.print("Sprinkler is ON");
-              } else if (request.indexOf("/off") != -1) {
-                digitalWrite(relayPin, LOW);
-                client.print("Sprinkler is OFF");
-              }
-            }
-            client.println();
-            break;
-          } else {
-            currentLine = "";
-          }
-        } else if (c != '\r') {
-          currentLine += c;
-        }
+        client.println(); // add a blank line to properly terminate the response
       }
     }
-    client.stop();
-    Serial.println("Client disconnected");
+    // Serial.println("Client disconnected");
   } else {
     Serial.println("New client NOT connected");
     delay(3000);
-  }
+    }
+
+
 }
