@@ -18,15 +18,18 @@ class ViewController: UIViewController {
     }
 
     @IBAction func sprinklerOnButtonPressed(_ sender: Any) {
-        sendHTTPRequest(endpoint: "/on")
+        sendHTTPRequest(endpoint: "/ONN")
     }
     
     @IBAction func sprinklerOffButtonPressed(_ sender: Any) {
-        sendHTTPRequest(endpoint: "/off")
+        sendHTTPRequest(endpoint: "/OFF")
+    }
+    
+    @IBAction func sprinklerDISCONNECTButtonPressed(_ sender: Any) {
+        sendHTTPRequest(endpoint: "/DIS")
     }
     
     // Example: An outlet for a label (if you have one)
-    
     @IBOutlet weak var statusLabel: UILabel!
     
     // Function to send HTTP requests to the Arduino
