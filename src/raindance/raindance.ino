@@ -1,6 +1,46 @@
 #include <WiFiNINA.h>
 #include <WiFiServer.h>
 #include <EEPROM.h>
+#include <Wire.h>
+#include <RTClib.h>
+#include <TimeAlarms.h>
+#include <Time.h>
+
+// Custom RTC_DS3231 class with modified I2C address
+class CustomRTC_DS3231 : public RTC_DS3231 {
+public:
+  boolean begin(TwoWire *wireInstance) {
+    _wire = wireInstance;
+    _wire->begin();
+    return checkIsRunning();
+  }
+
+protected:
+
+  TwoWire *_wire; // Add this line to define the _wire member variable
+
+  uint8_t read_i2c_register(uint8_t addr, uint8_t reg) {
+    _wire->beginTransmission(0x60); // Custom I2C address
+    _wire->write((byte)reg);
+    _wire->endTransmission();
+    _wire->requestFrom(0x60, (byte)1);
+    return _wire->read();
+  }
+
+  void write_i2c_register(uint8_t addr, uint8_t reg, uint8_t val) {
+    _wire->beginTransmission(0x60); // Custom I2C address
+    _wire->write((byte)reg);
+    _wire->write((byte)val);
+    _wire->endTransmission();
+  }
+
+  boolean checkIsRunning() {
+    uint8_t status = read_i2c_register(0x60, 0x0F); // Status register address
+    return !(status & 0x80); // Check the oscillator stop flag (OSF)
+  }
+};
+
+CustomRTC_DS3231 rtc;
 
 // WiFi settings
 const char* ssid = "ARRIS-439E";
@@ -12,15 +52,25 @@ WiFiServer server(80);
 // Define the pin for the relay
 const int relayPin = 7;
 
+// RTC_DS3231 rtc;
+
 void setup() {
   // put your setup code here, to run once:
   
   Serial.begin(9600);
   delay(500);
   while (!Serial) {
+    Serial.println("setting up serial port");
+    delay(500);
     ; // wait for SERIAL PORT TO CONNECT
   }
-  Serial.println("setting up serial port");
+  Serial.println("serial port connected");
+
+  if (!rtc.begin(&Wire)) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+  Serial.println("RTC found");
 
   // Initialize the relay pin as an output
   pinMode(relayPin, OUTPUT);
