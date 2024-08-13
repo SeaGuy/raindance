@@ -1,0 +1,588 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		14378D412C6BF99A00F73353 /* MyLawnSprinklerControllerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14378D402C6BF99A00F73353 /* MyLawnSprinklerControllerApp.swift */; };
+		14378D432C6BF99A00F73353 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14378D422C6BF99A00F73353 /* ContentView.swift */; };
+		14378D452C6BF99C00F73353 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 14378D442C6BF99C00F73353 /* Assets.xcassets */; };
+		14378D482C6BF99C00F73353 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 14378D472C6BF99C00F73353 /* Preview Assets.xcassets */; };
+		14378D522C6BF99D00F73353 /* MyLawnSprinklerControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14378D512C6BF99D00F73353 /* MyLawnSprinklerControllerTests.swift */; };
+		14378D5C2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14378D5B2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.swift */; };
+		14378D5E2C6BF99D00F73353 /* MyLawnSprinklerControllerUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14378D5D2C6BF99D00F73353 /* MyLawnSprinklerControllerUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		14378D4E2C6BF99D00F73353 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14378D352C6BF99A00F73353 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14378D3C2C6BF99A00F73353;
+			remoteInfo = MyLawnSprinklerController;
+		};
+		14378D582C6BF99D00F73353 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14378D352C6BF99A00F73353 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 14378D3C2C6BF99A00F73353;
+			remoteInfo = MyLawnSprinklerController;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		14378D3D2C6BF99A00F73353 /* MyLawnSprinklerController.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyLawnSprinklerController.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		14378D402C6BF99A00F73353 /* MyLawnSprinklerControllerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLawnSprinklerControllerApp.swift; sourceTree = "<group>"; };
+		14378D422C6BF99A00F73353 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		14378D442C6BF99C00F73353 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		14378D472C6BF99C00F73353 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		14378D4D2C6BF99D00F73353 /* MyLawnSprinklerControllerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyLawnSprinklerControllerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		14378D512C6BF99D00F73353 /* MyLawnSprinklerControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLawnSprinklerControllerTests.swift; sourceTree = "<group>"; };
+		14378D572C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyLawnSprinklerControllerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		14378D5B2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLawnSprinklerControllerUITests.swift; sourceTree = "<group>"; };
+		14378D5D2C6BF99D00F73353 /* MyLawnSprinklerControllerUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyLawnSprinklerControllerUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		14378D3A2C6BF99A00F73353 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14378D4A2C6BF99D00F73353 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14378D542C6BF99D00F73353 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14378D342C6BF99A00F73353 = {
+			isa = PBXGroup;
+			children = (
+				14378D3F2C6BF99A00F73353 /* MyLawnSprinklerController */,
+				14378D502C6BF99D00F73353 /* MyLawnSprinklerControllerTests */,
+				14378D5A2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests */,
+				14378D3E2C6BF99A00F73353 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		14378D3E2C6BF99A00F73353 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				14378D3D2C6BF99A00F73353 /* MyLawnSprinklerController.app */,
+				14378D4D2C6BF99D00F73353 /* MyLawnSprinklerControllerTests.xctest */,
+				14378D572C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		14378D3F2C6BF99A00F73353 /* MyLawnSprinklerController */ = {
+			isa = PBXGroup;
+			children = (
+				14378D402C6BF99A00F73353 /* MyLawnSprinklerControllerApp.swift */,
+				14378D422C6BF99A00F73353 /* ContentView.swift */,
+				14378D442C6BF99C00F73353 /* Assets.xcassets */,
+				14378D462C6BF99C00F73353 /* Preview Content */,
+			);
+			path = MyLawnSprinklerController;
+			sourceTree = "<group>";
+		};
+		14378D462C6BF99C00F73353 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				14378D472C6BF99C00F73353 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		14378D502C6BF99D00F73353 /* MyLawnSprinklerControllerTests */ = {
+			isa = PBXGroup;
+			children = (
+				14378D512C6BF99D00F73353 /* MyLawnSprinklerControllerTests.swift */,
+			);
+			path = MyLawnSprinklerControllerTests;
+			sourceTree = "<group>";
+		};
+		14378D5A2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests */ = {
+			isa = PBXGroup;
+			children = (
+				14378D5B2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.swift */,
+				14378D5D2C6BF99D00F73353 /* MyLawnSprinklerControllerUITestsLaunchTests.swift */,
+			);
+			path = MyLawnSprinklerControllerUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		14378D3C2C6BF99A00F73353 /* MyLawnSprinklerController */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14378D612C6BF99D00F73353 /* Build configuration list for PBXNativeTarget "MyLawnSprinklerController" */;
+			buildPhases = (
+				14378D392C6BF99A00F73353 /* Sources */,
+				14378D3A2C6BF99A00F73353 /* Frameworks */,
+				14378D3B2C6BF99A00F73353 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MyLawnSprinklerController;
+			productName = MyLawnSprinklerController;
+			productReference = 14378D3D2C6BF99A00F73353 /* MyLawnSprinklerController.app */;
+			productType = "com.apple.product-type.application";
+		};
+		14378D4C2C6BF99D00F73353 /* MyLawnSprinklerControllerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14378D642C6BF99D00F73353 /* Build configuration list for PBXNativeTarget "MyLawnSprinklerControllerTests" */;
+			buildPhases = (
+				14378D492C6BF99D00F73353 /* Sources */,
+				14378D4A2C6BF99D00F73353 /* Frameworks */,
+				14378D4B2C6BF99D00F73353 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				14378D4F2C6BF99D00F73353 /* PBXTargetDependency */,
+			);
+			name = MyLawnSprinklerControllerTests;
+			productName = MyLawnSprinklerControllerTests;
+			productReference = 14378D4D2C6BF99D00F73353 /* MyLawnSprinklerControllerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		14378D562C6BF99D00F73353 /* MyLawnSprinklerControllerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14378D672C6BF99D00F73353 /* Build configuration list for PBXNativeTarget "MyLawnSprinklerControllerUITests" */;
+			buildPhases = (
+				14378D532C6BF99D00F73353 /* Sources */,
+				14378D542C6BF99D00F73353 /* Frameworks */,
+				14378D552C6BF99D00F73353 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				14378D592C6BF99D00F73353 /* PBXTargetDependency */,
+			);
+			name = MyLawnSprinklerControllerUITests;
+			productName = MyLawnSprinklerControllerUITests;
+			productReference = 14378D572C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		14378D352C6BF99A00F73353 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1420;
+				LastUpgradeCheck = 1420;
+				TargetAttributes = {
+					14378D3C2C6BF99A00F73353 = {
+						CreatedOnToolsVersion = 14.2;
+					};
+					14378D4C2C6BF99D00F73353 = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = 14378D3C2C6BF99A00F73353;
+					};
+					14378D562C6BF99D00F73353 = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = 14378D3C2C6BF99A00F73353;
+					};
+				};
+			};
+			buildConfigurationList = 14378D382C6BF99A00F73353 /* Build configuration list for PBXProject "MyLawnSprinklerController" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 14378D342C6BF99A00F73353;
+			productRefGroup = 14378D3E2C6BF99A00F73353 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				14378D3C2C6BF99A00F73353 /* MyLawnSprinklerController */,
+				14378D4C2C6BF99D00F73353 /* MyLawnSprinklerControllerTests */,
+				14378D562C6BF99D00F73353 /* MyLawnSprinklerControllerUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		14378D3B2C6BF99A00F73353 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14378D482C6BF99C00F73353 /* Preview Assets.xcassets in Resources */,
+				14378D452C6BF99C00F73353 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14378D4B2C6BF99D00F73353 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14378D552C6BF99D00F73353 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		14378D392C6BF99A00F73353 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14378D432C6BF99A00F73353 /* ContentView.swift in Sources */,
+				14378D412C6BF99A00F73353 /* MyLawnSprinklerControllerApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14378D492C6BF99D00F73353 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14378D522C6BF99D00F73353 /* MyLawnSprinklerControllerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		14378D532C6BF99D00F73353 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14378D5C2C6BF99D00F73353 /* MyLawnSprinklerControllerUITests.swift in Sources */,
+				14378D5E2C6BF99D00F73353 /* MyLawnSprinklerControllerUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		14378D4F2C6BF99D00F73353 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14378D3C2C6BF99A00F73353 /* MyLawnSprinklerController */;
+			targetProxy = 14378D4E2C6BF99D00F73353 /* PBXContainerItemProxy */;
+		};
+		14378D592C6BF99D00F73353 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 14378D3C2C6BF99A00F73353 /* MyLawnSprinklerController */;
+			targetProxy = 14378D582C6BF99D00F73353 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		14378D5F2C6BF99D00F73353 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		14378D602C6BF99D00F73353 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		14378D622C6BF99D00F73353 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"MyLawnSprinklerController/Preview Content\"";
+				DEVELOPMENT_TEAM = 2RSJ3R74SW;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.MyLawnSprinklerController;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		14378D632C6BF99D00F73353 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"MyLawnSprinklerController/Preview Content\"";
+				DEVELOPMENT_TEAM = 2RSJ3R74SW;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.MyLawnSprinklerController;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		14378D652C6BF99D00F73353 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2RSJ3R74SW;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.MyLawnSprinklerControllerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyLawnSprinklerController.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyLawnSprinklerController";
+			};
+			name = Debug;
+		};
+		14378D662C6BF99D00F73353 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2RSJ3R74SW;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.MyLawnSprinklerControllerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MyLawnSprinklerController.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MyLawnSprinklerController";
+			};
+			name = Release;
+		};
+		14378D682C6BF99D00F73353 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2RSJ3R74SW;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.MyLawnSprinklerControllerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MyLawnSprinklerController;
+			};
+			name = Debug;
+		};
+		14378D692C6BF99D00F73353 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2RSJ3R74SW;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.WilliamLaing.MyLawnSprinklerControllerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MyLawnSprinklerController;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		14378D382C6BF99A00F73353 /* Build configuration list for PBXProject "MyLawnSprinklerController" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14378D5F2C6BF99D00F73353 /* Debug */,
+				14378D602C6BF99D00F73353 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14378D612C6BF99D00F73353 /* Build configuration list for PBXNativeTarget "MyLawnSprinklerController" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14378D622C6BF99D00F73353 /* Debug */,
+				14378D632C6BF99D00F73353 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14378D642C6BF99D00F73353 /* Build configuration list for PBXNativeTarget "MyLawnSprinklerControllerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14378D652C6BF99D00F73353 /* Debug */,
+				14378D662C6BF99D00F73353 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		14378D672C6BF99D00F73353 /* Build configuration list for PBXNativeTarget "MyLawnSprinklerControllerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14378D682C6BF99D00F73353 /* Debug */,
+				14378D692C6BF99D00F73353 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 14378D352C6BF99A00F73353 /* Project object */;
+}
