@@ -127,7 +127,7 @@ void setup() {
   PrintCurrentTime();
   // create the alarms
   //Alarm.alarmRepeat(dowSaturday, 6, 0, 0, ScheduledSprinklerOn);
-  Alarm.alarmRepeat(dowWednesday, 10, 36, 1, ScheduledSprinklerOn);  
+  Alarm.alarmRepeat(dowWednesday, 16, 29, 1, ScheduledSprinklerOn);  
   // Get and set current time every morning at 5:00 AM
   Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
 }
