@@ -6,6 +6,8 @@
 #include <Time.h>
 #include <TimeAlarms.h>
 #include <TimeLib.h>
+#include <ArduinoHttpClient.h>
+#include <Arduino_JSON.h>
 
 
 // Custom RTC_DS3231 class with modified I2C address
@@ -59,6 +61,11 @@ const char* password = "287860664144";
 
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
+
+const char timeServerAddress[] = "worldtimeapi.org";  // server address
+int timePort = 80;
+WiFiClient wifiTimeClient;
+HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
 
 // Define the pin for the relay
 const int relayPin = 7;
@@ -122,6 +129,7 @@ void setup() {
   Serial.print("Connected to WiFi with address ");
   Serial.println(myIPAddress);
 
+  GetCurrentTime();
   PrintCurrentTime();
 }
 
@@ -271,6 +279,42 @@ void PrintCurrentTime() {
       Serial.println("Time is NOT Set!");
       // flash red LED
     }
+}
+
+void GetCurrentTime() {
+  // Make a HTTP GET request
+  httpTimeClient.get("/api/timezone/America/New_York");
+  // httpTimeClient.get("/api/timezone/Etc/UTC");
+
+
+  // read the status code and body of the response
+  int statusCode = httpTimeClient.responseStatusCode();
+  String response = httpTimeClient.responseBody();
+
+  Serial.print("Status code: ");
+  Serial.println(statusCode);
+  Serial.print("Response: ");
+  Serial.println(response);
+
+  if (statusCode == 200) {
+    // Parse JSON response
+    JSONVar myObject = JSON.parse(response);
+
+    // Check if parsing succeeds
+    if (JSON.typeof(myObject) == "undefined") {
+      Serial.println("Parsing input failed!");
+      return;
+    }
+
+    // Extract datetime field
+    String datetime = (const char*) myObject["datetime"];
+    Serial.print("Current datetime: ");
+    Serial.println(datetime);
+  } else {
+    Serial.println("Failed to get time");
   }
+    //delay(36000000);
+
+}
   
 
