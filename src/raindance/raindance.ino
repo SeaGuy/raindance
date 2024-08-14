@@ -75,7 +75,6 @@ const int relayPin = 7;
 void setup() {
   // put your setup code here, to run once:
 
-  // setTime(13,37,0,13,8,24);
 
   Serial.begin(9600);
   delay(500);
@@ -106,11 +105,6 @@ void setup() {
   //Serial.print("rtc.now(): ");
   //Serial.println(toString(currentDateTime));
 
-  // create the alarms
-  //Alarm.alarmRepeat(dowSaturday, 6, 0, 0, ScheduledSprinklerOn);  
-  //Alarm.alarmRepeat(dowWednesday, 6, 0, 0, ScheduledSprinklerOn);  
-  Alarm.alarmRepeat(dowTuesday, 13, 38, 0, ScheduledSprinklerOn);  
-
   // Initialize the relay pin as an output
   pinMode(relayPin, OUTPUT);
   Serial.println("configuring digital output pin for relay");
@@ -129,8 +123,13 @@ void setup() {
   Serial.print("Connected to WiFi with address ");
   Serial.println(myIPAddress);
 
-  GetCurrentTime();
+  GetSetCurrentTime();
   PrintCurrentTime();
+  // create the alarms
+  //Alarm.alarmRepeat(dowSaturday, 6, 0, 0, ScheduledSprinklerOn);
+  Alarm.alarmRepeat(dowWednesday, 10, 36, 1, ScheduledSprinklerOn);  
+  // Get and set current time every morning at 5:00 AM
+  Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
 }
 
 
@@ -261,6 +260,7 @@ void ScheduledSprinklerOff() {
 }
 
 void PrintCurrentTime() {
+  Serial.println("entering PrintCurrentTime()");
   if (year() != 1970) {
     Serial.print("Current time: ");
     Serial.print(hour());
@@ -279,9 +279,12 @@ void PrintCurrentTime() {
       Serial.println("Time is NOT Set!");
       // flash red LED
     }
+    Serial.println("leaving PrintCurrentTime()");
 }
 
-void GetCurrentTime() {
+void GetSetCurrentTime() {
+  Serial.println("entering GetSetCurrentTime()");
+
   // Make a HTTP GET request
   httpTimeClient.get("/api/timezone/America/New_York");
   // httpTimeClient.get("/api/timezone/Etc/UTC");
@@ -310,11 +313,27 @@ void GetCurrentTime() {
     String datetime = (const char*) myObject["datetime"];
     Serial.print("Current datetime: ");
     Serial.println(datetime);
+
+    int hr = (datetime.substring(11,13)).toInt();
+    int min = (datetime.substring(14,16)).toInt();
+    int sec = (datetime.substring(17,19)).toInt();
+    int day = (datetime.substring(8,10)).toInt();
+    int month = (datetime.substring(5,7)).toInt();
+    int year = (datetime.substring(0,5)).toInt();
+
+    Serial.println(hr);
+    Serial.println(min);
+    Serial.println(sec);
+    Serial.println(day);
+    Serial.println(month);
+    Serial.println(year);
+
+    setTime(hr,min,sec,day,month,year);
+
   } else {
     Serial.println("Failed to get time");
   }
-    //delay(36000000);
-
+    Serial.println("leaving GetSetCurrentTime()");
 }
   
 
