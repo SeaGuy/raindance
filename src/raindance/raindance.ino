@@ -68,7 +68,7 @@ const int relayPin = 7;
 void setup() {
   // put your setup code here, to run once:
 
-  setTime(13,37,0,13,8,24);
+  // setTime(13,37,0,13,8,24);
 
   Serial.begin(9600);
   delay(500);
@@ -122,19 +122,7 @@ void setup() {
   Serial.print("Connected to WiFi with address ");
   Serial.println(myIPAddress);
 
-  Serial.print("Current time: ");
-  Serial.print(hour());
-  Serial.print(":");
-  Serial.print(minute());
-  Serial.print(":");
-  Serial.print(second());
-  Serial.print(" ");
-  Serial.print(day());
-  Serial.print("/");
-  Serial.print(month());
-  Serial.print("/");
-  Serial.print(year());
-  Serial.println();
+  PrintCurrentTime();
 }
 
 
@@ -241,20 +229,8 @@ void loop() {
     client = server.available();
     }
 
-     // Print the current time every second for debugging
-  Serial.print("Current time: ");
-  Serial.print(hour());
-  Serial.print(":");
-  Serial.print(minute());
-  Serial.print(":");
-  Serial.print(second());
-  Serial.print(" ");
-  Serial.print(day());
-  Serial.print("/");
-  Serial.print(month());
-  Serial.print("/");
-  Serial.print(year());
-  Serial.println();
+  // Print the current time every second for debugging
+  PrintCurrentTime();
 }
 
 // functions to be called when an alarm triggers:
@@ -270,10 +246,31 @@ void ScheduledSprinklerOff() {
   zones = zones - 1;
   Serial.print("zones: ");
   Serial.println(zones);
-
   if (zones > 0) {
     delay(5000);
     ScheduledSprinklerOn();
   }
 }
+
+void PrintCurrentTime() {
+  if (year() != 1970) {
+    Serial.print("Current time: ");
+    Serial.print(hour());
+    Serial.print(":");
+    Serial.print(minute());
+    Serial.print(":");
+    Serial.print(second());
+    Serial.print(" ");
+    Serial.print(day());
+    Serial.print("/");
+    Serial.print(month());
+    Serial.print("/");
+    Serial.print(year());
+    Serial.println();
+    } else {
+      Serial.println("Time is NOT Set!");
+      // flash red LED
+    }
+  }
+  
 
