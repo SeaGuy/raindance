@@ -2,59 +2,14 @@
 #include <WiFiServer.h>
 #include <EEPROM.h>
 #include <Wire.h>
-#include <RTClib.h>
 #include <Time.h>
 #include <TimeAlarms.h>
 #include <TimeLib.h>
 #include <ArduinoHttpClient.h>
 #include <Arduino_JSON.h>
-#include <ArduinoOTA.h>
 
-
-// Custom RTC_DS3231 class with modified I2C address
-
-#define DS3231_STATUSREG 0x0F
-#define I2C_ADDRESS 0x60
 int zones = 3;
 int durationSeconds = 10;
-
-class CustomRTC_DS3231 : public RTC_DS3231 {
-public:
-  boolean begin(TwoWire *wireInstance) {
-    _wire = wireInstance;
-    _wire->begin();
-    return checkIsRunning();
-  }
-
-  boolean lostPower(void) {
-    return (read_i2c_register(0x60, DS3231_STATUSREG) >> 7) & 0x1;
-  }
-
-protected:
-  TwoWire *_wire; // Add this line to define the _wire member variable
-
-  uint8_t read_i2c_register(uint8_t addr, uint8_t reg) {
-    _wire->beginTransmission(I2C_ADDRESS); // Custom I2C address
-    _wire->write((byte)reg);
-    _wire->endTransmission();
-    _wire->requestFrom(I2C_ADDRESS, (byte)1);
-    return _wire->read();
-  }
-
-  void write_i2c_register(uint8_t addr, uint8_t reg, uint8_t val) {
-    _wire->beginTransmission(I2C_ADDRESS); // Custom I2C address
-    _wire->write((byte)reg);
-    _wire->write((byte)val);
-    _wire->endTransmission();
-  }
-
-  boolean checkIsRunning() {
-    uint8_t status = read_i2c_register(I2C_ADDRESS, 0x0F); // Status register address
-    return !(status & 0x80); // Check the oscillator stop flag (OSF)
-  }
-};
-
-//CustomRTC_DS3231 rtc;
 
 // WiFi settings
 const char* ssid = "ARRIS-439E";
@@ -71,11 +26,8 @@ HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePo
 // Define the pin for the relay
 const int relayPin = 7;
 
-// RTC_DS3231 rtc;
-
 void setup() {
   // put your setup code here, to run once:
-
 
   Serial.begin(9600);
   delay(500);
@@ -86,25 +38,6 @@ void setup() {
     // flash LED
   }
   Serial.println("serial port connected");
-
-
-  //if (!rtc.begin(&Wire)) {
-    //Serial.println("Couldn't find RTC");
-    //while (1);
-  //}
-  //Serial.println("RTC found");
-
-
-  //if (rtc.lostPower()) {
-    //Serial.println("RTC lost power, let us set the time!");
-    // This line sets the RTC to the date & time this sketch was compiled
-    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // Or set a specific date & time
-    // rtc.adjust(DateTime(2024, 7, 29, 12, 0, 0));
-  //}
-  //currentDateTime = rtc.now();
-  //Serial.print("rtc.now(): ");
-  //Serial.println(toString(currentDateTime));
 
   // Initialize the relay pin as an output
   pinMode(relayPin, OUTPUT);
@@ -131,25 +64,12 @@ void setup() {
   Alarm.alarmRepeat(dowThursday, 15, 18, 1, ScheduledSprinklerOn);  
   // Get and set current time every morning at 5:00 AM
   Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
-
-  //ArduinoOTA.begin();
 }
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  // Turn the relay on (assuming HIGH level triggers the relay)
-  // Serial.println("Turning ON the relay!");
-  // digitalWrite(relayPin, HIGH);
-  // delay(5000); // Wait for 30 seconds (30,000 milliseconds)
-
-  // Turn the relay off
-  // Serial.println("Turning OFF the relay!");
-  // digitalWrite(relayPin, LOW);
-  // delay(60000); // Wait for 30 seconds (30,000 milliseconds)
-
-  Alarm.delay(1000);
+  
+  Alarm.delay(1000); // needed to activate alarms
 
   int size = 0;
   char buf[512];
@@ -170,7 +90,6 @@ void loop() {
       if (client.available()) {
         Serial.println("New client connected");
         
-
         // char c = client.read();
         size = client.read(buf, 256);
         Serial.println(buf);
@@ -241,8 +160,6 @@ void loop() {
 
   // Print the current time every second for debugging
   PrintCurrentTime();
-
-  //ArduinoOTA.poll();
 }
 
 // functions to be called when an alarm triggers:
