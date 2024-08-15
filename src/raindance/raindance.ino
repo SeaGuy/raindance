@@ -8,6 +8,7 @@
 #include <TimeLib.h>
 #include <ArduinoHttpClient.h>
 #include <Arduino_JSON.h>
+#include <ArduinoOTA.h>
 
 
 // Custom RTC_DS3231 class with modified I2C address
@@ -127,9 +128,11 @@ void setup() {
   PrintCurrentTime();
   // create the alarms
   //Alarm.alarmRepeat(dowSaturday, 6, 0, 0, ScheduledSprinklerOn);
-  Alarm.alarmRepeat(dowWednesday, 16, 29, 1, ScheduledSprinklerOn);  
+  Alarm.alarmRepeat(dowThursday, 15, 18, 1, ScheduledSprinklerOn);  
   // Get and set current time every morning at 5:00 AM
   Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
+
+  //ArduinoOTA.begin();
 }
 
 
@@ -238,6 +241,8 @@ void loop() {
 
   // Print the current time every second for debugging
   PrintCurrentTime();
+
+  //ArduinoOTA.poll();
 }
 
 // functions to be called when an alarm triggers:
