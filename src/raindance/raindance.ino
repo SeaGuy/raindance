@@ -75,6 +75,7 @@ void setupAlarms() {
 }
 
 void handleClientRequests() {
+  Serial.println("start handleClientRequests()");
   WiFiClient client = server.available();
   if (client) {
     Serial.println("New client connected");
@@ -93,32 +94,35 @@ void handleClientRequests() {
         strncpy(command, buf + 5, 3);
         command[3] = '\0';
         buf[15] = '\0';
-        
-        client.println("HTTP/1.1 200 OK");
-        client.println("Content-Type: text/html");
-        client.println("Connection: close");
-        client.println();
-        client.println("<!DOCTYPE HTML>");
-        client.println("<html>");
-        client.println("<head><title>Arduino Sprinkler Control</title></head>");
-        client.println("<body>");
 
-        if (size > 0 && ( (strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0) || (strcmp(command, "DIS") == 0) )) {
+        // Prepare the response
+        String response = "<!DOCTYPE HTML><html><head><title>Arduino Sprinkler Control</title></head><body>";
+
+        if (size > 0 && ((strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0) || (strcmp(command, "DIS") == 0))) {
           if (strcmp(command, "ONN") == 0) {
             digitalWrite(relayPin, HIGH);
-            client.println("<h1>Sprinkler is ON</h1>");
+            response += "<h1>Sprinkler is ON</h1>";
           } else if (strcmp(command, "OFF") == 0) {
             digitalWrite(relayPin, LOW);
-            client.println("<h1>Sprinkler is OFF</h1>");
+            response += "<h1>Sprinkler is OFF</h1>";
           } else if (strcmp(command, "DIS") == 0) {
-            client.println("<h1>Sprinkler is DISCONNECTED</h1>");
+            response += "<h1>Sprinkler is DISCONNECTED</h1>";
           }
-          client.println("</body>");
-          client.println("</html>");
-          client.println();
-          delay(500);
-          client.stop();
         }
+        response += "</body></html>";
+        
+        // Send HTTP response headers
+        client.println("HTTP/1.1 200 OK");
+        client.println("Content-Type: text/html");
+        client.print("Content-Length: ");
+        client.println(response.length());
+        client.println("Connection: close");
+        client.println();
+
+        // Send the response body
+        client.print(response);
+        delay(256);
+        client.stop();
       }
     }
   } else {
