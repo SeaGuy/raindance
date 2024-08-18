@@ -95,32 +95,36 @@ void handleClientRequests() {
         command[3] = '\0';
         buf[15] = '\0';
 
-        // Prepare the response
-        String response = "<!DOCTYPE HTML><html><head><title>Arduino Sprinkler Control</title></head><body>";
+        // Prepare JSON response
+        JSONVar responseObj;
 
         if (size > 0 && ((strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0) || (strcmp(command, "DIS") == 0))) {
           if (strcmp(command, "ONN") == 0) {
             digitalWrite(relayPin, HIGH);
-            response += "<h1>Sprinkler is ON</h1>";
+            responseObj["status"] = "Sprinkler is ON";
           } else if (strcmp(command, "OFF") == 0) {
             digitalWrite(relayPin, LOW);
-            response += "<h1>Sprinkler is OFF</h1>";
+            responseObj["status"] = "Sprinkler is OFF";
           } else if (strcmp(command, "DIS") == 0) {
-            response += "<h1>Sprinkler is DISCONNECTED</h1>";
+            responseObj["status"] = "Sprinkler is DISCONNECTED";
           }
+        } else {
+          responseObj["error"] = "Invalid command";
         }
-        response += "</body></html>";
+
+        // Convert JSON object to string
+        String jsonResponse = JSON.stringify(responseObj);
         
         // Send HTTP response headers
         client.println("HTTP/1.1 200 OK");
-        client.println("Content-Type: text/html");
+        client.println("Content-Type: application/json");
         client.print("Content-Length: ");
-        client.println(response.length());
+        client.println(jsonResponse.length());
         client.println("Connection: close");
         client.println();
 
         // Send the response body
-        client.print(response);
+        client.print(jsonResponse);
         delay(256);
         client.stop();
       }
@@ -188,6 +192,7 @@ void GetSetCurrentTime() {
     int year = (datetime.substring(0,4)).toInt();
     setTime(hr, min, sec, day, month, year);
   } else {
-    Serial.println("Failed to get time");
+    Serial.println("Failed to get time; trying again in 60 seconds");
+    Alarm.timerOnce(60, GetSetCurrentTime);
   }
 }
