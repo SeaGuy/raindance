@@ -21,16 +21,19 @@ struct ContentView: View {
     @State private var duration = 0
     @State private var schedule: [SprinklerSchedule] = []
     //@State private var schedule: [SprinklerSchedule] = [SprinklerSchedule(dayOfWeek: 0, time: Date())]
+    @State private var params:  [String: Any] = [:]
 
+    
     var body: some View {
         VStack {
+            Text("Hello, SwiftUI!")
             HStack {
                 Button("ON") {
-                    sendCommand(command: "ONN")
+                    sendCommand(command: "ONN", httpMethod: "GET", params: [:])
                 }
                 .padding()
                 Button("OFF") {
-                    sendCommand(command: "OFF")
+                    sendCommand(command: "OFF", httpMethod: "GET", params: [:])
                 }
                 .padding()
             }
@@ -93,14 +96,49 @@ struct ContentView: View {
             }
             .padding()
         }
+        .onAppear {
+            // Send the "HI!" command when ContentView appears
+            sendCommand(command: "HI!", httpMethod: "GET", params: [:])
+        }
     }
 
-    private func sendCommand(command: String) {
-        guard let url = URL(string: "http://\(myArduinoIPAddress)/\(command)") else { return }
+    private func sendCommand(command: String, httpMethod: String, params: [String: Any] ) {
+        print("sendCommand->command: \(command); httpMethod: \(httpMethod)")
+        guard let url = URL(string: "http://\(myArduinoIPAddress)/\(command)") else {
+            print("Invalid URL")
+            return
+        }
         var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        URLSession.shared.dataTask(with: request).resume()
+        request.httpMethod = httpMethod
+        if (httpMethod == "POST") {
+            request.httpBody = try? JSONSerialization.data(withJSONObject: params)
+        }
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Error occurred: \(error)")
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
+                print("HTTP Method: \(request.httpMethod ?? "Unknown")")
+                
+                if let mimeType = httpResponse.mimeType {
+                    print("MIME Type: \(mimeType)")
+                }
+            }
+            
+            if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                print("Response Data: \(responseString)")
+            } else {
+                print("No response data received or unable to decode data.")
+            }
+        }
+
+        task.resume()
+        // URLSession.shared.dataTask(with: request).resume()
     }
+
 
     private func sendSetTimestampCommand() {
         guard let url = URL(string: "http://\(myArduinoIPAddress)/SET_TIMESTAMP") else { return }
@@ -172,9 +210,11 @@ struct SprinklerSchedule: Identifiable {
     var time: Date
 }
 
-
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
 }
+
+
+
