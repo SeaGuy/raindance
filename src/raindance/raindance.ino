@@ -63,10 +63,15 @@ void connectToWiFi() {
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, password);
-    delay(3000);
+    delay(1000);
   }
   Serial.print("Connected to WiFi with address ");
   Serial.println(WiFi.localIP());
+  // print the received signal strength:
+  long rssi = WiFi.RSSI();
+  Serial.print("signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
 }
 
 void setupAlarms() {
@@ -79,7 +84,7 @@ void handleClientRequests() {
   WiFiClient client = server.available();
   if (client) {
     Serial.println("New client connected");
-    char buf[512];
+    char buf[1024];
     char command[4]; // length of command ("ON", "OFF") + 1 for null terminator
     int size = 0;
     String currentLine = "";
@@ -89,7 +94,9 @@ void handleClientRequests() {
       command[0] = '\0';
 
       if (client.available()) {
-        size = client.read(buf, 256);
+        size = client.read(buf, 512);
+        Serial.println("client.read->size of the buffer returned: " + String(size));
+        Serial.println("client.read->buf: ");
         Serial.println(buf);
         strncpy(command, buf + 5, 3);
         command[3] = '\0';
@@ -98,7 +105,7 @@ void handleClientRequests() {
         // Prepare JSON response
         JSONVar responseObj;
 
-        if (size > 0 && ((strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0) || (strcmp(command, "DIS") == 0))) {
+        if (size > 0 && ((strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0)  || (strcmp(command, "HI!") == 0))) {
           if (strcmp(command, "ONN") == 0) {
             digitalWrite(relayPin, HIGH);
             responseObj["status"] = "Sprinkler is ON";
@@ -107,6 +114,9 @@ void handleClientRequests() {
             responseObj["status"] = "Sprinkler is OFF";
           } else if (strcmp(command, "DIS") == 0) {
             responseObj["status"] = "Sprinkler is DISCONNECTED";
+          } else if (strcmp(command, "HI!") == 0) {
+            String timeStamp = "TimeStamp=" + String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
+            responseObj["status"] = timeStamp;
           }
         } else {
           responseObj["error"] = "Invalid command";
