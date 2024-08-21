@@ -15,17 +15,41 @@ struct ContentView: View {
     @State private var schedule: [SprinklerSchedule] = []
     @State private var params: [String: Any] = [:]
     @State private var responseMessage: String = "Waiting for response..."
+    @State private var isSprinklerOn: Bool = false // State to track if the sprinkler is on
 
     var body: some View {
+        
+        HStack {
+            HStack {
+                Text(responseMessage)
+                    .padding()
+                    .multilineTextAlignment(.center)
+            }
+        }
         VStack {
-            Text("Hello, SwiftUI!")
+            Text("Hello, Monica & Bill!")
+            
+            // Sprinkler ON LED
+            HStack {
+                Circle()
+                    .fill(isSprinklerOn ? Color.green : Color.gray)
+                    .frame(width: 20, height: 20)
+                Text("Sprinkler ON")
+                    .foregroundColor(isSprinklerOn ? Color.green : Color.gray)
+            }
+            .padding()
+
             HStack {
                 Button("ON") {
                     sendCommand(command: "ONN", httpMethod: "GET", params: [:])
+                    // Send the "HI!" command when ContentView appears
+                    sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
                 Button("OFF") {
                     sendCommand(command: "OFF", httpMethod: "GET", params: [:])
+                    // Send the "HI!" command when ContentView appears
+                    sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
             }
@@ -86,10 +110,6 @@ struct ContentView: View {
                 sendSetScheduleCommand()
             }
             .padding()
-
-            Text(responseMessage)
-                .padding()
-                .multilineTextAlignment(.center)
         }
         .padding()
         .onAppear {
@@ -141,6 +161,12 @@ struct ContentView: View {
            let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let status = jsonResponse["status"] as? String {
             let year = String(status.prefix(4))
+            let lastCharacter = status.last
+            
+            // Update the Sprinkler ON LED based on the last character
+            DispatchQueue.main.async {
+                isSprinklerOn = (lastCharacter == "1")
+            }
             
             if year == "1970" {
                 // If the year is "1970", call the functions to send the current date and time

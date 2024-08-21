@@ -17,7 +17,6 @@ const char* ssid = "ARRIS-439E";
 const char* password = "287860664144";
 
 int status = WL_IDLE_STATUS;
-int sprinklerState = 0; // OFF=0; ON=1
 WiFiServer server(80);
 
 const char timeServerAddress[] = "worldtimeapi.org";  // time server address
@@ -27,6 +26,7 @@ HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePo
 
 // Define the pin for the relay
 const int relayPin = 7;
+int relayState = 0;
 
 void setup() {
   setupSerial();
@@ -42,6 +42,18 @@ void loop() {
   Alarm.delay(1000); // needed to activate alarms
   handleClientRequests();
   PrintCurrentTime();
+
+  // Read the state of the relay pin
+  relayState = digitalRead(relayPin);
+  Serial.print("relayState: ");
+  Serial.println(relayState);
+
+
+  if (relayState == HIGH) {
+    Serial.println("relay is ON");
+  } else {
+    Serial.println("relay is OFF");
+  }
 }
 
 void setupSerial() {
@@ -138,7 +150,9 @@ void handleClientRequests() {
               } else if (strcmp(command, "HI!") == 0) {
                 String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
                 Serial.println("timeStamp: " + timeStamp);
-                String sprinklerStateStr = String(sprinklerState);
+                Serial.print("relayState: ");
+                Serial.println(relayState);
+                String sprinklerStateStr = String(relayState);
                 Serial.println("sprinklerStateStr: " + sprinklerStateStr);
                 String responseStr = timeStamp + "::" + sprinklerStateStr;
                 responseObj["status"] = responseStr;
