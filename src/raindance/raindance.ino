@@ -1,5 +1,6 @@
+#include <SPI.h>
 #include <WiFiNINA.h>
-#include <WiFiServer.h>
+//#include <WiFiServer.h>
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Time.h>
@@ -16,9 +17,10 @@ const char* ssid = "ARRIS-439E";
 const char* password = "287860664144";
 
 int status = WL_IDLE_STATUS;
+int sprinklerState = 0; // OFF=0; ON=1
 WiFiServer server(80);
 
-const char timeServerAddress[] = "worldtimeapi.org";  // server address
+const char timeServerAddress[] = "worldtimeapi.org";  // time server address
 int timePort = 80;
 WiFiClient wifiTimeClient;
 HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
@@ -81,7 +83,10 @@ void setupAlarms() {
 
 void handleClientRequests() {
   Serial.println("start handleClientRequests()");
+
+  // get a client that is connected to the server and that has data available for reading
   WiFiClient client = server.available();
+
   if (client) {
     Serial.println("New client connected");
     char buf[1024];
@@ -116,7 +121,11 @@ void handleClientRequests() {
             responseObj["status"] = "Sprinkler is DISCONNECTED";
           } else if (strcmp(command, "HI!") == 0) {
             String timeStamp = "TimeStamp=" + String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
-            responseObj["status"] = timeStamp;
+            Serial.println("timeStamp: " + timeStamp);
+            String sprinklerStateStr = String(sprinklerState);
+            Serial.println("sprinklerStateStr: " + sprinklerStateStr);
+            String responseStr = timeStamp + "::" + sprinklerStateStr;
+            responseObj["status"] = responseStr;
           }
         } else {
           responseObj["error"] = "Invalid command";
@@ -135,7 +144,7 @@ void handleClientRequests() {
 
         // Send the response body
         client.print(jsonResponse);
-        delay(256);
+        delay(1024);
         client.stop();
       }
     }
