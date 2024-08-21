@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  MyLawnSprinklerController
-//
-//  Created by William E. Laing, Jr. on 8/13/24.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -20,10 +13,9 @@ struct ContentView: View {
     @State private var numberOfZones = 1
     @State private var duration = 0
     @State private var schedule: [SprinklerSchedule] = []
-    //@State private var schedule: [SprinklerSchedule] = [SprinklerSchedule(dayOfWeek: 0, time: Date())]
-    @State private var params:  [String: Any] = [:]
+    @State private var params: [String: Any] = [:]
+    @State private var responseMessage: String = "Waiting for response..."
 
-    
     var body: some View {
         VStack {
             Text("Hello, SwiftUI!")
@@ -56,53 +48,57 @@ struct ContentView: View {
                 .padding()
 
             List {
-                            ForEach(schedule) { entry in
-                                HStack {
-                                    Picker("Day of the Week", selection: Binding(
-                                        get: { entry.dayOfWeek },
-                                        set: { newValue in
-                                            if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
-                                                schedule[index].dayOfWeek = newValue
-                                            }
-                                        }
-                                    )) {
-                                        ForEach(0..<7) { day in
-                                            Text(dayName(for: day)).tag(day)
-                                        }
-                                    }
-                                    DatePicker("Time", selection: Binding(
-                                        get: { entry.time },
-                                        set: { newValue in
-                                            if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
-                                                schedule[index].time = newValue
-                                            }
-                                        }
-                                    ), displayedComponents: [.hourAndMinute])
+                ForEach(schedule) { entry in
+                    HStack {
+                        Picker("Day of the Week", selection: Binding(
+                            get: { entry.dayOfWeek },
+                            set: { newValue in
+                                if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
+                                    schedule[index].dayOfWeek = newValue
                                 }
                             }
-                            .onDelete { indexSet in
-                                schedule.remove(atOffsets: indexSet)
+                        )) {
+                            ForEach(0..<7) { day in
+                                Text(dayName(for: day)).tag(day)
                             }
                         }
+                        DatePicker("Time", selection: Binding(
+                            get: { entry.time },
+                            set: { newValue in
+                                if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
+                                    schedule[index].time = newValue
+                                }
+                            }
+                        ), displayedComponents: [.hourAndMinute])
+                    }
+                }
+                .onDelete { indexSet in
+                    schedule.remove(atOffsets: indexSet)
+                }
+            }
 
-                        Button("Add Schedule Entry") {
-                            schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
-                        }
-                        .padding()
-
+            Button("Add Schedule Entry") {
+                schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
+            }
+            .padding()
 
             Button("SET_SCHEDULE") {
                 sendSetScheduleCommand()
             }
             .padding()
+
+            Text(responseMessage)
+                .padding()
+                .multilineTextAlignment(.center)
         }
+        .padding()
         .onAppear {
             // Send the "HI!" command when ContentView appears
             sendCommand(command: "HI!", httpMethod: "GET", params: [:])
         }
     }
 
-    private func sendCommand(command: String, httpMethod: String, params: [String: Any] ) {
+    private func sendCommand(command: String, httpMethod: String, params: [String: Any]) {
         print("sendCommand->command: \(command); httpMethod: \(httpMethod)")
         guard let url = URL(string: "http://\(myArduinoIPAddress)/\(command)") else {
             print("Invalid URL")
@@ -130,15 +126,40 @@ struct ContentView: View {
             
             if let data = data, let responseString = String(data: data, encoding: .utf8) {
                 print("Response Data: \(responseString)")
+                handleResponse(responseString)
             } else {
                 print("No response data received or unable to decode data.")
             }
         }
 
         task.resume()
-        // URLSession.shared.dataTask(with: request).resume()
     }
 
+    private func handleResponse(_ responseString: String) {
+        // Parse the JSON response
+        if let data = responseString.data(using: .utf8),
+           let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let status = jsonResponse["status"] as? String {
+            let year = String(status.prefix(4))
+            
+            if year == "1970" {
+                // If the year is "1970", call the functions to send the current date and time
+                sendDateTimeToArduino { response in
+                    DispatchQueue.main.async {
+                        responseMessage = response
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    responseMessage = "Received valid response: \(status)"
+                }
+            }
+        } else {
+            DispatchQueue.main.async {
+                responseMessage = "Invalid JSON response"
+            }
+        }
+    }
 
     private func sendSetTimestampCommand() {
         guard let url = URL(string: "http://\(myArduinoIPAddress)/SET_TIMESTAMP") else { return }
@@ -197,12 +218,48 @@ struct ContentView: View {
         let dateFormatter = DateFormatter()
         return dateFormatter.weekdaySymbols[index]
     }
-}
+    
+    private func getCurrentDateTimeISO8601() -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = TimeZone(identifier: "America/New_York")
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let dateTimeString = formatter.string(from: Date())
+        return dateTimeString
+    }
 
-//struct SprinklerSchedule {
-    //var dayOfWeek: Int
-    //var time: Date
-//}
+    private func sendDateTimeToArduino(completion: @escaping (String) -> Void) {
+        let dateTimeString = getCurrentDateTimeISO8601()
+        let json: [String: Any] = ["datetime": dateTimeString]
+        
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: json) else {
+            completion("Error: Unable to serialize JSON")
+            return
+        }
+        
+        let urlString = "http://\(myArduinoIPAddress)/TIM"
+        var request = URLRequest(url: URL(string: urlString)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                completion("Error: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
+                completion("HTTP Status Code: \(httpStatus.statusCode)")
+                return
+            }
+
+            let responseString = String(data: data, encoding: .utf8) ?? "No response data"
+            completion(responseString)
+        }
+
+        task.resume()
+    }
+}
 
 struct SprinklerSchedule: Identifiable {
     var id = UUID()
@@ -215,6 +272,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
-
-
