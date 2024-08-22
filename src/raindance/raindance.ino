@@ -30,6 +30,13 @@ HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePo
 const int relayPin = 7;
 int relayState = 0;
 
+// Function prototypes
+void handleGetRequest(String command, JSONVar& responseObj);
+void handlePostRequest(WiFiClient& client, JSONVar& responseObj);
+String readHeaders(WiFiClient& client);
+String readJsonBody(WiFiClient& client);
+void processScheduleCommand(JSONVar parsedData, JSONVar& responseObj);
+
 void setup() {
   setupSerial();
   setupRelay();
@@ -101,120 +108,116 @@ void handleClientRequests() {
 
   WiFiClient client = server.available();
 
-  JSONVar responseObj;
-
   if (client) {
     Serial.println("New client connected");
-    String requestData = "";
+    String requestData = client.readStringUntil('\n');
+    requestData.trim();  // Remove any extra whitespace
 
-    while (client.connected()) {
-      if (client.available()) {
-        requestData = client.readStringUntil('\n');  // Read the first line of the request
-        requestData.trim();  // Remove any extra whitespace
+    Serial.println("Received: " + requestData);
 
-        Serial.println("Received: " + requestData);
+    JSONVar responseObj;
 
-        // Determine if this is a GET or POST request
-        if (requestData.startsWith("GET")) {
-          Serial.println("Processing GET request");
-
-          // Extract the command from the GET request
-          String command = requestData.substring(5, 8);
-          Serial.println("Command: " + command);
-
-          if (command == "ONN") {
-            digitalWrite(relayPin, HIGH);
-            responseObj["status"] = "Sprinkler is ON";
-          } else if (command == "OFF") {
-            digitalWrite(relayPin, LOW);
-            responseObj["status"] = "Sprinkler is OFF";
-          } else if (command == "HI!") {
-            String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
-            String sprinklerStateStr = String(digitalRead(relayPin));
-            String responseStr = timeStamp + "::" + sprinklerStateStr;
-            responseObj["status"] = responseStr;
-          } else {
-            responseObj["error"] = "Invalid command";
-          }
-
-          break;  // We have processed the GET request, so break out of the loop
-
-        } else if (requestData.startsWith("POST")) {
-          Serial.println("Processing POST request");
-
-          // Continue reading the remaining headers
-          while (client.available()) {
-            String headerLine = client.readStringUntil('\n');
-            headerLine.trim();
-            if (headerLine.length() == 0) {
-              break;  // Headers are done, now we expect the body
-            }
-          }
-
-          // Read the entire JSON body
-          String jsonString = "";
-          while (client.available()) {
-            jsonString += client.readString();
-          }
-
-          Serial.println("Extracted JSON: " + jsonString);
-
-          JSONVar parsedData = JSON.parse(jsonString);
-
-          if (JSON.typeof(parsedData) == "undefined") {
-            Serial.println("Parsing input failed!");
-            responseObj["error"] = "Failed to parse JSON";
-          } else {
-            String command = "SCH";  // We expect the command in the body for POST
-
-            if (command == "SCH") {
-              // Extract the parameters
-              int numberOfZones = (int)parsedData["numberOfZones"];
-              int duration = (int)parsedData["duration"];
-              JSONVar scheduleArray = parsedData["schedule"];
-              
-              // Log the received parameters
-              Serial.println("Received Schedule Parameters:");
-              Serial.println("Number of Zones: " + String(numberOfZones));
-              Serial.println("Duration per Zone: " + String(duration) + " minutes");
-
-              for (int i = 0; i < scheduleArray.length(); i++) {
-                int dayOfWeek = (int)scheduleArray[i]["dayOfWeek"];
-                double time = (double)scheduleArray[i]["time"];  // time since 1970
-
-                Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + String(time));
-              }
-
-              responseObj["status"] = "Schedule updated";
-            } else {
-              responseObj["error"] = "Invalid POST command";
-            }
-          }
-
-          break;  // We have processed the POST request, so break out of the loop
-        }
-      }
+    if (requestData.startsWith("GET")) {
+      String command = requestData.substring(5, 8);
+      handleGetRequest(command, responseObj);
+    } else if (requestData.startsWith("POST")) {
+      String headers = readHeaders(client);
+      handlePostRequest(client, responseObj);
     }
 
-    // Convert JSON object to string
+    // Send the response
     String jsonResponse = JSON.stringify(responseObj);
-    
-    // Send HTTP response headers
     client.println("HTTP/1.1 200 OK");
     client.println("Content-Type: application/json");
     client.print("Content-Length: ");
     client.println(jsonResponse.length());
     client.println("Connection: close");
     client.println();
-
-    // Send the response body
     client.print(jsonResponse);
+
     delay(1024);
     client.stop();
   } else {
     Serial.println("No client connected");
     delay(5000);
   }
+}
+
+void handleGetRequest(String command, JSONVar& responseObj) {
+  Serial.println("Processing GET request with command: " + command);
+  
+  if (command == "ONN") {
+    digitalWrite(relayPin, HIGH);
+    responseObj["status"] = "Sprinkler is ON";
+  } else if (command == "OFF") {
+    digitalWrite(relayPin, LOW);
+    responseObj["status"] = "Sprinkler is OFF";
+  } else if (command == "HI!") {
+    String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
+    String sprinklerStateStr = String(digitalRead(relayPin));
+    responseObj["status"] = timeStamp + "::" + sprinklerStateStr;
+  } else {
+    responseObj["error"] = "Invalid command";
+  }
+}
+
+void handlePostRequest(WiFiClient& client, JSONVar& responseObj) {
+  Serial.println("Processing POST request");
+
+  String jsonString = readJsonBody(client);
+  Serial.println("Extracted JSON: " + jsonString);
+
+  JSONVar parsedData = JSON.parse(jsonString);
+
+  if (JSON.typeof(parsedData) == "undefined") {
+    Serial.println("Parsing input failed!");
+    responseObj["error"] = "Failed to parse JSON";
+  } else {
+    processScheduleCommand(parsedData, responseObj);
+  }
+}
+
+String readHeaders(WiFiClient& client) {
+  String headers = "";
+  while (client.available()) {
+    String line = client.readStringUntil('\n');
+    line.trim();
+    if (line.length() == 0) {
+      break;  // Headers are done
+    }
+    headers += line + "\n";
+  }
+  Serial.println("Headers: " + headers);
+  return headers;
+}
+
+String readJsonBody(WiFiClient& client) {
+  String jsonBody = "";
+  while (client.available()) {
+    jsonBody += client.readString();
+  }
+  return jsonBody;
+}
+
+void processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
+  Serial.println("Processing schedule command");
+  
+  int numberOfZones = (int)parsedData["numberOfZones"];
+  int duration = (int)parsedData["duration"];
+  JSONVar scheduleArray = parsedData["schedule"];
+
+  Serial.println("Received Schedule Parameters:");
+  Serial.println("Number of Zones: " + String(numberOfZones));
+  Serial.println("Duration per Zone: " + String(duration) + " minutes");
+
+  for (int i = 0; i < scheduleArray.length(); i++) {
+    int dayOfWeek = (int)scheduleArray[i]["dayOfWeek"];
+    double time = (double)scheduleArray[i]["time"];  // time since 1970
+
+    Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + String(time));
+  }
+
+  responseObj["status"] = "Schedule updated";
 }
 
 void ScheduledSprinklerOn() {
