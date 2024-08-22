@@ -11,6 +11,7 @@
 
 int zones = 3;
 int durationSeconds = 10;
+int interZoneDelay = 10000;
 
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
@@ -90,7 +91,8 @@ void connectToWiFi() {
 }
 
 void setupAlarms() {
-  Alarm.alarmRepeat(dowThursday, 16, 19, 1, ScheduledSprinklerOn);
+  Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);
+  Alarm.alarmRepeat(dowSaturday, 6, 0, 1, ScheduledSprinklerOn);
   Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
 }
 
@@ -138,36 +140,72 @@ void handleClientRequests() {
             command[3] = '\0';
             Serial.println("command: " + String(command));
             buf[15] = '\0';
-
-            if (size > 0 && ((strcmp(command, "ONN") == 0) || (strcmp(command, "OFF") == 0)  || (strcmp(command, "HI!") == 0))) {
-              if (strcmp(command, "ONN") == 0) {
-                digitalWrite(relayPin, HIGH);
-                responseObj["status"] = "Sprinkler is ON";
+            if (strcmp(command, "ONN") == 0) {
+              digitalWrite(relayPin, HIGH);
+              responseObj["status"] = "Sprinkler is ON";
               } else if (strcmp(command, "OFF") == 0) {
                 digitalWrite(relayPin, LOW);
                 responseObj["status"] = "Sprinkler is OFF";
-              } else if (strcmp(command, "DIS") == 0) {
-                responseObj["status"] = "Sprinkler is DISCONNECTED";
-              } else if (strcmp(command, "HI!") == 0) {
-                String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
-                Serial.println("timeStamp: " + timeStamp);
-                Serial.print("relayState: ");
-                Serial.println(relayState);
-                String sprinklerStateStr = String(relayState);
-                Serial.println("sprinklerStateStr: " + sprinklerStateStr);
-                String responseStr = timeStamp + "::" + sprinklerStateStr;
-                responseObj["status"] = responseStr;
-              }
-            } else {
-              responseObj["error"] = "Invalid command";
-            }
+                } else if (strcmp(command, "HI!") == 0) {
+                  String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
+                  Serial.println("timeStamp: " + timeStamp);
+                  Serial.print("relayState: ");
+                  Serial.println(relayState);
+                  String sprinklerStateStr = String(relayState);
+                  Serial.println("sprinklerStateStr: " + sprinklerStateStr);
+                  String responseStr = timeStamp + "::" + sprinklerStateStr;
+                  responseObj["status"] = responseStr;
+                  } else {
+                    responseObj["error"] = "Invalid command";
+                  }
             break;
           case POST:
             Serial.println("switch->POST");
             strncpy(command, buf + 6, 3);
             command[3] = '\0';
             Serial.println("command: " + String(command));
-            buf[15] = '\0';
+            // Check if the command is "SCH" for setting the schedule
+            if (strcmp(command, "SCH") == 0) {
+              // Extract the JSON payload by locating the start of the JSON body
+              char* jsonStart = strstr(buf, "\r\n\r\n");
+              if (jsonStart != NULL) {
+                jsonStart += 4; // Move pointer past the "\r\n\r\n"
+                String jsonString = String(jsonStart);
+
+                Serial.println("Extracted JSON: " + jsonString);
+
+                JSONVar parsedData = JSON.parse(jsonString);
+
+                if (JSON.typeof(parsedData) == "undefined") {
+                  Serial.println("Parsing input failed!");
+                  responseObj["error"] = "Failed to parse JSON";
+                } else {
+                  // Extract the parameters
+                  int numberOfZones = (int)parsedData["numberOfZones"];
+                  int duration = (int)parsedData["duration"];
+                  JSONVar scheduleArray = parsedData["schedule"];
+                  
+                  // Log the received parameters
+                  Serial.println("Received Schedule Parameters:");
+                  Serial.println("Number of Zones: " + String(numberOfZones));
+                  Serial.println("Duration per Zone: " + String(duration) + " minutes");
+
+                  for (int i = 0; i < scheduleArray.length(); i++) {
+                    int dayOfWeek = (int)scheduleArray[i]["dayOfWeek"];
+                    double time = (double)scheduleArray[i]["time"];  // time since 1970
+
+                    Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + String(time));
+                  }
+
+                  responseObj["status"] = "Schedule updated";
+                }
+              } else {
+                Serial.println("Failed to locate JSON start in the buffer!");
+                responseObj["error"] = "Failed to locate JSON data";
+              }
+            } else {
+              responseObj["error"] = "Invalid POST command";
+            }
             break;
           default:
             Serial.println("switch->bad httpMethod!");
@@ -209,7 +247,7 @@ void ScheduledSprinklerOff() {
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
-    delay(5000);
+    delay(interZoneDelay);
     ScheduledSprinklerOn();
   }
 }

@@ -21,13 +21,6 @@ struct ContentView: View {
     
     var body: some View {
         
-        HStack {
-            HStack {
-                Text(responseMessage)
-                    .padding()
-                    .multilineTextAlignment(.center)
-            }
-        }
         VStack {
             Text("Hello, Monica & Bill!")
             
@@ -92,6 +85,9 @@ struct ContentView: View {
                                         Text(dayName(for: day)).tag(day)
                                     }
                                 }
+                                .pickerStyle(MenuPickerStyle()) // Use a compact style for the Picker
+                                .frame(maxWidth: .infinity) // Ensure Picker uses available space
+                                
                                 DatePicker("Time", selection: Binding(
                                     get: { entry.time },
                                     set: { newValue in
@@ -100,26 +96,40 @@ struct ContentView: View {
                                         }
                                     }
                                 ), displayedComponents: [.hourAndMinute])
+                                .labelsHidden() // Hide labels to make it more compact
+                                .frame(maxWidth: .infinity) // Ensure DatePicker uses available space
                             }
                         }
                         .onDelete { indexSet in
                             schedule.remove(atOffsets: indexSet)
                         }
                     }
+                    .frame(maxHeight: 300) // Set a maximum height for the List to ensure visibility
+                }
+                //.padding()
+            }
+            //.padding()
+
+            HStack {
+                Button("Add") {
+                    schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
                 }
                 .padding()
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
+                
+                Button("Upload") {
+                    sendSetScheduleCommand()
+                }
+                .padding()
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
             }
-            .padding()
-        
-            Button("Add Schedule Entry") {
-                schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
-            }
-            .padding()
             
-            Button("SET_SCHEDULE") {
-                sendSetScheduleCommand()
-            }
-            .padding()
         }
         .padding()
         
@@ -209,7 +219,7 @@ struct ContentView: View {
     }
     
     private func sendSetScheduleCommand() {
-        guard let url = URL(string: "http://\(myArduinoIPAddress)/SET_SCHEDULE") else { return }
+        guard let url = URL(string: "http://\(myArduinoIPAddress)/SCH") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
