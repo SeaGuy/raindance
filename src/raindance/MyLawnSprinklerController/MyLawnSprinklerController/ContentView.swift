@@ -10,8 +10,8 @@ struct ContentView: View {
     @State private var hour = 0
     @State private var minute = 0
     @State private var second = 0
-    @State private var numberOfZones = 1
-    @State private var duration = 0
+    @State private var numberOfZones = 3
+    @State private var duration = 30
     @State private var schedule: [SprinklerSchedule] = []
     @State private var params: [String: Any] = [:]
     @State private var responseMessage: String = "Waiting for response..."
