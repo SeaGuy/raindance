@@ -99,137 +99,118 @@ void setupAlarms() {
 void handleClientRequests() {
   Serial.println("start handleClientRequests()");
 
-  // get a client that is connected to the server and that has data available for reading
   WiFiClient client = server.available();
 
-  // Prepare JSON response
   JSONVar responseObj;
 
   if (client) {
     Serial.println("New client connected");
-    char buf[1024];
-    char command[4]; // length of command ("ON", "OFF") + 1 for null terminator
-    char httpMethod[4]; //the first four characters containing eother "GET " or "POST"
-    enum  : int { ERROR, GET, POST} httpMethodEnum = ERROR;
-    int size = 0;
-    String currentLine = "";
+    String requestData = "";
 
     while (client.connected()) {
-      buf[0] = '\0';
-      command[0] = '\0';
-
       if (client.available()) {
-        size = client.read(buf, 512);
-        Serial.println("client.read->size of the buffer returned: " + String(size));
-        Serial.println("client.read->buf: ");
-        Serial.println(buf);
-        strncpy(httpMethod, buf + 0, 4);
-        httpMethod[4] = '\0';
-        Serial.println("httpMethod: " + String(httpMethod));
-        if (strcmp(httpMethod, "GET ") == 0) { 
-          httpMethodEnum = GET;
-          } else if (strcmp(httpMethod, "POST") == 0) {
-          httpMethodEnum = POST;
-          } else { 
-            httpMethodEnum = ERROR;
+        requestData = client.readStringUntil('\n');  // Read the first line of the request
+        requestData.trim();  // Remove any extra whitespace
+
+        Serial.println("Received: " + requestData);
+
+        // Determine if this is a GET or POST request
+        if (requestData.startsWith("GET")) {
+          Serial.println("Processing GET request");
+
+          // Extract the command from the GET request
+          String command = requestData.substring(5, 8);
+          Serial.println("Command: " + command);
+
+          if (command == "ONN") {
+            digitalWrite(relayPin, HIGH);
+            responseObj["status"] = "Sprinkler is ON";
+          } else if (command == "OFF") {
+            digitalWrite(relayPin, LOW);
+            responseObj["status"] = "Sprinkler is OFF";
+          } else if (command == "HI!") {
+            String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
+            String sprinklerStateStr = String(digitalRead(relayPin));
+            String responseStr = timeStamp + "::" + sprinklerStateStr;
+            responseObj["status"] = responseStr;
+          } else {
+            responseObj["error"] = "Invalid command";
           }
-        switch (httpMethodEnum) {
-          case GET:
-            Serial.println("switch->GET ");
-            strncpy(command, buf + 5, 3);
-            command[3] = '\0';
-            Serial.println("command: " + String(command));
-            buf[15] = '\0';
-            if (strcmp(command, "ONN") == 0) {
-              digitalWrite(relayPin, HIGH);
-              responseObj["status"] = "Sprinkler is ON";
-              } else if (strcmp(command, "OFF") == 0) {
-                digitalWrite(relayPin, LOW);
-                responseObj["status"] = "Sprinkler is OFF";
-                } else if (strcmp(command, "HI!") == 0) {
-                  String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
-                  Serial.println("timeStamp: " + timeStamp);
-                  Serial.print("relayState: ");
-                  Serial.println(relayState);
-                  String sprinklerStateStr = String(relayState);
-                  Serial.println("sprinklerStateStr: " + sprinklerStateStr);
-                  String responseStr = timeStamp + "::" + sprinklerStateStr;
-                  responseObj["status"] = responseStr;
-                  } else {
-                    responseObj["error"] = "Invalid command";
-                  }
-            break;
-          case POST:
-            Serial.println("switch->POST");
-            strncpy(command, buf + 6, 3);
-            command[3] = '\0';
-            Serial.println("command: " + String(command));
-            // Check if the command is "SCH" for setting the schedule
-            if (strcmp(command, "SCH") == 0) {
-              // Extract the JSON payload by locating the start of the JSON body
-              char* jsonStart = strstr(buf, "\r\n\r\n");
-              if (jsonStart != NULL) {
-                jsonStart += 4; // Move pointer past the "\r\n\r\n"
-                String jsonString = String(jsonStart);
 
-                Serial.println("Extracted JSON: " + jsonString);
+          break;  // We have processed the GET request, so break out of the loop
 
-                JSONVar parsedData = JSON.parse(jsonString);
+        } else if (requestData.startsWith("POST")) {
+          Serial.println("Processing POST request");
 
-                if (JSON.typeof(parsedData) == "undefined") {
-                  Serial.println("Parsing input failed!");
-                  responseObj["error"] = "Failed to parse JSON";
-                } else {
-                  // Extract the parameters
-                  int numberOfZones = (int)parsedData["numberOfZones"];
-                  int duration = (int)parsedData["duration"];
-                  JSONVar scheduleArray = parsedData["schedule"];
-                  
-                  // Log the received parameters
-                  Serial.println("Received Schedule Parameters:");
-                  Serial.println("Number of Zones: " + String(numberOfZones));
-                  Serial.println("Duration per Zone: " + String(duration) + " minutes");
+          // Continue reading the remaining headers
+          while (client.available()) {
+            String headerLine = client.readStringUntil('\n');
+            headerLine.trim();
+            if (headerLine.length() == 0) {
+              break;  // Headers are done, now we expect the body
+            }
+          }
 
-                  for (int i = 0; i < scheduleArray.length(); i++) {
-                    int dayOfWeek = (int)scheduleArray[i]["dayOfWeek"];
-                    double time = (double)scheduleArray[i]["time"];  // time since 1970
+          // Read the entire JSON body
+          String jsonString = "";
+          while (client.available()) {
+            jsonString += client.readString();
+          }
 
-                    Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + String(time));
-                  }
+          Serial.println("Extracted JSON: " + jsonString);
 
-                  responseObj["status"] = "Schedule updated";
-                }
-              } else {
-                Serial.println("Failed to locate JSON start in the buffer!");
-                responseObj["error"] = "Failed to locate JSON data";
+          JSONVar parsedData = JSON.parse(jsonString);
+
+          if (JSON.typeof(parsedData) == "undefined") {
+            Serial.println("Parsing input failed!");
+            responseObj["error"] = "Failed to parse JSON";
+          } else {
+            String command = "SCH";  // We expect the command in the body for POST
+
+            if (command == "SCH") {
+              // Extract the parameters
+              int numberOfZones = (int)parsedData["numberOfZones"];
+              int duration = (int)parsedData["duration"];
+              JSONVar scheduleArray = parsedData["schedule"];
+              
+              // Log the received parameters
+              Serial.println("Received Schedule Parameters:");
+              Serial.println("Number of Zones: " + String(numberOfZones));
+              Serial.println("Duration per Zone: " + String(duration) + " minutes");
+
+              for (int i = 0; i < scheduleArray.length(); i++) {
+                int dayOfWeek = (int)scheduleArray[i]["dayOfWeek"];
+                double time = (double)scheduleArray[i]["time"];  // time since 1970
+
+                Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + String(time));
               }
+
+              responseObj["status"] = "Schedule updated";
             } else {
               responseObj["error"] = "Invalid POST command";
             }
-            break;
-          default:
-            Serial.println("switch->bad httpMethod!");
-            break;
+          }
+
+          break;  // We have processed the POST request, so break out of the loop
         }
-        
-
-        // Convert JSON object to string
-        String jsonResponse = JSON.stringify(responseObj);
-        
-        // Send HTTP response headers
-        client.println("HTTP/1.1 200 OK");
-        client.println("Content-Type: application/json");
-        client.print("Content-Length: ");
-        client.println(jsonResponse.length());
-        client.println("Connection: close");
-        client.println();
-
-        // Send the response body
-        client.print(jsonResponse);
-        delay(1024);
-        client.stop();
       }
     }
+
+    // Convert JSON object to string
+    String jsonResponse = JSON.stringify(responseObj);
+    
+    // Send HTTP response headers
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: application/json");
+    client.print("Content-Length: ");
+    client.println(jsonResponse.length());
+    client.println("Connection: close");
+    client.println();
+
+    // Send the response body
+    client.print(jsonResponse);
+    delay(1024);
+    client.stop();
   } else {
     Serial.println("No client connected");
     delay(5000);
