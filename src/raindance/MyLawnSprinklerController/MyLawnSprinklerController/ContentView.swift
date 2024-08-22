@@ -16,7 +16,9 @@ struct ContentView: View {
     @State private var params: [String: Any] = [:]
     @State private var responseMessage: String = "Waiting for response..."
     @State private var isSprinklerOn: Bool = false // State to track if the sprinkler is on
-
+    @State private var blinkOpacity: Double = 1.0 // for the blinking effect on "Sprinkler is ON"
+    
+    
     var body: some View {
         
         HStack {
@@ -34,43 +36,42 @@ struct ContentView: View {
                 Circle()
                     .fill(isSprinklerOn ? Color.green : Color.gray)
                     .frame(width: 20, height: 20)
-                Text("Sprinkler ON")
+                Text(isSprinklerOn ? "Sprinkler is ON" : "Sprinkler is OFF")
                     .foregroundColor(isSprinklerOn ? Color.green : Color.gray)
+                    .opacity(isSprinklerOn && blinkOpacity == 0.0 ? 0.0 : 1.0) // Control opacity based on blinking state
+                    .animation(isSprinklerOn ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .none, value: blinkOpacity)  // Start/stop animation based on sprinkler state
+                
             }
             .padding()
-
+            
             HStack {
                 Button("ON") {
                     sendCommand(command: "ONN", httpMethod: "GET", params: [:])
-                    // Send the "HI!" command when ContentView appears
                     sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
+                
                 Button("OFF") {
                     sendCommand(command: "OFF", httpMethod: "GET", params: [:])
-                    // Send the "HI!" command when ContentView appears
                     sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
             }
-
-            DatePicker("Set Timestamp", selection: Binding(
-                get: { getDate() },
-                set: { setDate(date: $0) }
-            ), displayedComponents: [.date, .hourAndMinute])
-                .padding()
-
-            Button("SET_TIMESTAMP") {
-                sendSetTimestampCommand()
-            }
-            .padding()
-
+            
             Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...10)
                 .padding()
-
+            
             Stepper("Duration per Zone: \(duration) min", value: $duration, in: 0...60)
                 .padding()
-
+            
             List {
                 ForEach(schedule) { entry in
                     HStack {
@@ -100,24 +101,35 @@ struct ContentView: View {
                     schedule.remove(atOffsets: indexSet)
                 }
             }
-
+            
             Button("Add Schedule Entry") {
                 schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
             }
             .padding()
-
+            
             Button("SET_SCHEDULE") {
                 sendSetScheduleCommand()
             }
             .padding()
         }
         .padding()
+        
         .onAppear {
             // Send the "HI!" command when ContentView appears
             sendCommand(command: "HI!", httpMethod: "GET", params: [:])
+            if isSprinklerOn {
+                startBlinking()
+            }
+        }
+        .onChange(of: isSprinklerOn) { newValue in
+            if newValue {
+                startBlinking()
+            } else {
+                stopBlinking()
+            }
         }
     }
-
+    
     private func sendCommand(command: String, httpMethod: String, params: [String: Any]) {
         print("sendCommand->command: \(command); httpMethod: \(httpMethod)")
         guard let url = URL(string: "http://\(myArduinoIPAddress)/\(command)") else {
@@ -151,10 +163,10 @@ struct ContentView: View {
                 print("No response data received or unable to decode data.")
             }
         }
-
+        
         task.resume()
     }
-
+    
     private func handleResponse(_ responseString: String) {
         // Parse the JSON response
         if let data = responseString.data(using: .utf8),
@@ -186,24 +198,7 @@ struct ContentView: View {
             }
         }
     }
-
-    private func sendSetTimestampCommand() {
-        guard let url = URL(string: "http://\(myArduinoIPAddress)/SET_TIMESTAMP") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let parameters: [String: Any] = [
-            "month": month,
-            "day": day,
-            "year": year,
-            "hour": hour,
-            "minute": minute,
-            "second": second
-        ]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: parameters)
-        URLSession.shared.dataTask(with: request).resume()
-    }
-
+    
     private func sendSetScheduleCommand() {
         guard let url = URL(string: "http://\(myArduinoIPAddress)/SET_SCHEDULE") else { return }
         var request = URLRequest(url: url)
@@ -218,7 +213,7 @@ struct ContentView: View {
         request.httpBody = try? JSONSerialization.data(withJSONObject: parameters)
         URLSession.shared.dataTask(with: request).resume()
     }
-
+    
     private func getDate() -> Date {
         var dateComponents = DateComponents()
         dateComponents.year = year
@@ -229,7 +224,7 @@ struct ContentView: View {
         dateComponents.second = second
         return Calendar.current.date(from: dateComponents) ?? Date()
     }
-
+    
     private func setDate(date: Date) {
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         year = components.year ?? 2024
@@ -239,7 +234,7 @@ struct ContentView: View {
         minute = components.minute ?? 0
         second = components.second ?? 0
     }
-
+    
     private func dayName(for index: Int) -> String {
         let dateFormatter = DateFormatter()
         return dateFormatter.weekdaySymbols[index]
@@ -252,7 +247,13 @@ struct ContentView: View {
         let dateTimeString = formatter.string(from: Date())
         return dateTimeString
     }
-
+    
+    func performActionWithDelay(delay: Double, action: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            action()  // Execute the passed function after the delay
+        }
+    }
+    
     private func sendDateTimeToArduino(completion: @escaping (String) -> Void) {
         let dateTimeString = getCurrentDateTimeISO8601()
         let json: [String: Any] = ["datetime": dateTimeString]
@@ -267,25 +268,39 @@ struct ContentView: View {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = jsonData
-
+        
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data, error == nil else {
                 completion("Error: \(error?.localizedDescription ?? "Unknown error")")
                 return
             }
-
+            
             if let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode != 200 {
                 completion("HTTP Status Code: \(httpStatus.statusCode)")
                 return
             }
-
+            
             let responseString = String(data: data, encoding: .utf8) ?? "No response data"
             completion(responseString)
         }
-
+        
         task.resume()
     }
+    
+    private func startBlinking() {
+        blinkOpacity = 0.0
+        withAnimation {
+            blinkOpacity = 0.0
+        }
+    }
+    
+    private func stopBlinking() {
+        withAnimation {
+            blinkOpacity = 1.0
+        }
+    }
 }
+
 
 struct SprinklerSchedule: Identifiable {
     var id = UUID()

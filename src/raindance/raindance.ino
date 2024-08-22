@@ -13,13 +13,14 @@ int zones = 3;
 int durationSeconds = 10;
 
 // WiFi settings
-const char* ssid = "ARRIS-439E";
-const char* password = "287860664144";
+const char ssid[] = "ARRIS-439E";
+const char password[] = "287860664144";
 
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
 
 const char timeServerAddress[] = "worldtimeapi.org";  // time server address
+const char timeServerAPI[] = "/api/timezone/America/New_York"; // API at time server
 int timePort = 80;
 WiFiClient wifiTimeClient;
 HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
@@ -235,7 +236,7 @@ void PrintCurrentTime() {
 
 void GetSetCurrentTime() {
   Serial.println("Getting and setting current time");
-  httpTimeClient.get("/apiXXX/timezone/America/New_York");
+  httpTimeClient.get(timeServerAPI);
   int statusCode = httpTimeClient.responseStatusCode();
   String response = httpTimeClient.responseBody();
 
