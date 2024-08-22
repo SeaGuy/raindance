@@ -66,42 +66,51 @@ struct ContentView: View {
                 .shadow(radius: 5)
             }
             
-            Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...10)
-                .padding()
-            
-            Stepper("Duration per Zone: \(duration) min", value: $duration, in: 0...60)
-                .padding()
-            
-            List {
-                ForEach(schedule) { entry in
-                    HStack {
-                        Picker("Day of the Week", selection: Binding(
-                            get: { entry.dayOfWeek },
-                            set: { newValue in
-                                if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
-                                    schedule[index].dayOfWeek = newValue
+            // Schedule settings and entries inside a bounding box
+            GroupBox(label: Label("Schedule Settings", systemImage: "calendar")) {
+                VStack {
+                    Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...10)
+                        .padding([.top, .horizontal])
+
+                    Stepper("Duration per Zone: \(duration) min", value: $duration, in: 0...60)
+                        .padding([.horizontal, .bottom])
+
+                    Divider() // Divider between steppers and schedule entries
+
+                    List {
+                        ForEach(schedule) { entry in
+                            HStack {
+                                Picker("Day of the Week", selection: Binding(
+                                    get: { entry.dayOfWeek },
+                                    set: { newValue in
+                                        if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
+                                            schedule[index].dayOfWeek = newValue
+                                        }
+                                    }
+                                )) {
+                                    ForEach(0..<7) { day in
+                                        Text(dayName(for: day)).tag(day)
+                                    }
                                 }
-                            }
-                        )) {
-                            ForEach(0..<7) { day in
-                                Text(dayName(for: day)).tag(day)
+                                DatePicker("Time", selection: Binding(
+                                    get: { entry.time },
+                                    set: { newValue in
+                                        if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
+                                            schedule[index].time = newValue
+                                        }
+                                    }
+                                ), displayedComponents: [.hourAndMinute])
                             }
                         }
-                        DatePicker("Time", selection: Binding(
-                            get: { entry.time },
-                            set: { newValue in
-                                if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
-                                    schedule[index].time = newValue
-                                }
-                            }
-                        ), displayedComponents: [.hourAndMinute])
+                        .onDelete { indexSet in
+                            schedule.remove(atOffsets: indexSet)
+                        }
                     }
                 }
-                .onDelete { indexSet in
-                    schedule.remove(atOffsets: indexSet)
-                }
+                .padding()
             }
-            
+            .padding()
+        
             Button("Add Schedule Entry") {
                 schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
             }
