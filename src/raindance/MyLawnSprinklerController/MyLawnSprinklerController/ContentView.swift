@@ -10,8 +10,8 @@ struct ContentView: View {
     @State private var hour = 0
     @State private var minute = 0
     @State private var second = 0
-    @State private var numberOfZones = 1
-    @State private var duration = 0
+    @State private var numberOfZones = 3
+    @State private var duration = 30
     @State private var schedule: [SprinklerSchedule] = []
     @State private var params: [String: Any] = [:]
     @State private var responseMessage: String = "Waiting for response..."
@@ -21,13 +21,6 @@ struct ContentView: View {
     
     var body: some View {
         
-        HStack {
-            HStack {
-                Text(responseMessage)
-                    .padding()
-                    .multilineTextAlignment(.center)
-            }
-        }
         VStack {
             Text("Hello, Monica & Bill!")
             
@@ -66,51 +59,77 @@ struct ContentView: View {
                 .shadow(radius: 5)
             }
             
-            Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...10)
-                .padding()
-            
-            Stepper("Duration per Zone: \(duration) min", value: $duration, in: 0...60)
-                .padding()
-            
-            List {
-                ForEach(schedule) { entry in
-                    HStack {
-                        Picker("Day of the Week", selection: Binding(
-                            get: { entry.dayOfWeek },
-                            set: { newValue in
-                                if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
-                                    schedule[index].dayOfWeek = newValue
+            // Schedule settings and entries inside a bounding box
+            GroupBox(label: Label("Schedule Settings", systemImage: "calendar")) {
+                VStack {
+                    Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...10)
+                        .padding([.top, .horizontal])
+
+                    Stepper("Duration per Zone: \(duration) min", value: $duration, in: 0...60)
+                        .padding([.horizontal, .bottom])
+
+                    Divider() // Divider between steppers and schedule entries
+
+                    List {
+                        ForEach(schedule) { entry in
+                            HStack {
+                                Picker("Day of the Week", selection: Binding(
+                                    get: { entry.dayOfWeek },
+                                    set: { newValue in
+                                        if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
+                                            schedule[index].dayOfWeek = newValue
+                                        }
+                                    }
+                                )) {
+                                    ForEach(0..<7) { day in
+                                        Text(dayName(for: day)).tag(day)
+                                    }
                                 }
-                            }
-                        )) {
-                            ForEach(0..<7) { day in
-                                Text(dayName(for: day)).tag(day)
+                                .pickerStyle(MenuPickerStyle()) // Use a compact style for the Picker
+                                .frame(maxWidth: .infinity) // Ensure Picker uses available space
+                                
+                                DatePicker("Time", selection: Binding(
+                                    get: { entry.time },
+                                    set: { newValue in
+                                        if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
+                                            schedule[index].time = newValue
+                                        }
+                                    }
+                                ), displayedComponents: [.hourAndMinute])
+                                .labelsHidden() // Hide labels to make it more compact
+                                .frame(maxWidth: .infinity) // Ensure DatePicker uses available space
                             }
                         }
-                        DatePicker("Time", selection: Binding(
-                            get: { entry.time },
-                            set: { newValue in
-                                if let index = schedule.firstIndex(where: { $0.id == entry.id }) {
-                                    schedule[index].time = newValue
-                                }
-                            }
-                        ), displayedComponents: [.hourAndMinute])
+                        .onDelete { indexSet in
+                            schedule.remove(atOffsets: indexSet)
+                        }
                     }
+                    .frame(maxHeight: 300) // Set a maximum height for the List to ensure visibility
                 }
-                .onDelete { indexSet in
-                    schedule.remove(atOffsets: indexSet)
+                //.padding()
+            }
+            //.padding()
+
+            HStack {
+                Button("Add") {
+                    schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
                 }
+                .padding()
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
+                
+                Button("Upload") {
+                    sendSetScheduleCommand()
+                }
+                .padding()
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
             }
             
-            Button("Add Schedule Entry") {
-                schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
-            }
-            .padding()
-            
-            Button("SET_SCHEDULE") {
-                sendSetScheduleCommand()
-            }
-            .padding()
         }
         .padding()
         
@@ -200,7 +219,7 @@ struct ContentView: View {
     }
     
     private func sendSetScheduleCommand() {
-        guard let url = URL(string: "http://\(myArduinoIPAddress)/SET_SCHEDULE") else { return }
+        guard let url = URL(string: "http://\(myArduinoIPAddress)/SCH") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
