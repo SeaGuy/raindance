@@ -218,7 +218,7 @@ struct ContentView: View {
         }
     }
     
-    private func sendSetScheduleCommand() {
+    /* private func sendSetScheduleCommand() {
         guard let url = URL(string: "http://\(myArduinoIPAddress)/SCH") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -229,6 +229,30 @@ struct ContentView: View {
             "duration": duration,
             "schedule": scheduleArray
         ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: parameters)
+        URLSession.shared.dataTask(with: request).resume()
+    } */
+    
+    private func sendSetScheduleCommand() {
+        guard let url = URL(string: "http://\(myArduinoIPAddress)/SCH") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Convert the time to "HH:mm" format for each schedule entry
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        
+        let scheduleArray = schedule.map {
+            ["dayOfWeek": $0.dayOfWeek, "time": timeFormatter.string(from: $0.time)]
+        }
+        
+        let parameters: [String: Any] = [
+            "numberOfZones": numberOfZones,
+            "duration": duration,
+            "schedule": scheduleArray
+        ]
+        
         request.httpBody = try? JSONSerialization.data(withJSONObject: parameters)
         URLSession.shared.dataTask(with: request).resume()
     }
