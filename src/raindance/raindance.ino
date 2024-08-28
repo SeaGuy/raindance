@@ -1,20 +1,43 @@
 /*
-uint32_t schedule entry bits
+=========
+bitfields
+=========
 
+bitfield 0
+zones: number of zones (1-4)
+uint8_t 
+
+bitfield 1
+duration: duration in minutes (1-120)
+uint8_t 
+
+bitfield 2
+number of schedules (1-7)
+
+bitfields 3-9
+sprionkler schedule bitfield
 bits    description  
-======
+---     -----------
 0-2     day of the week (0=Sunday, 6=Saturday)
 3-13    time of day in minutes (1=12:00AM; 1440=11:59PM; 121=2:01AM)
-14-15   zones (1-3)
-16-22   duration in minutes (1-120)
 
 
+==========
 EEPROM map
+==========
 
 address   type        description of value
-=======   ====        ====================
-0         uint32_t    number of sprinkler schedule entries (0-7)
-1         uint32_t    first schedule entry
+-------   ----        --------------------
+0         uint8_t     zones: number of zones (1-4)
+1         uint8_t     duration: number of minutes per zone (1-120)
+2         uint8_t     number of sprinkler schedules (1-7)
+3         uint16_t    most significant byte (MSB) of first schedule entry
+4         uint16_t    least significant byte (LSB) of first schedule entry
+5         uint16_t    most significant byte (MSB) of second schedule entry
+6         uint16_t    least significant byte (LSB) of second schedule entry
+7         uint16_t    most significant byte (MSB) of third schedule entry (optional)
+8         uint16_t    least significant byte (LSB) of third schedule entry (optional)
+... etc.
 */
 
 
@@ -32,11 +55,12 @@ address   type        description of value
 #include <ArduinoHttpClient.h>
 #include <Arduino_JSON.h>
 
-int zones = 3;
-int durationSeconds = 10;
-int interZoneDelay = 10000;
+int zones = 3;                      // value could change by XXX command
+int durationSeconds = 10;           // value could change by XXX command
+const int interZoneDelay = 10000;   // 10-secondf pause to let the manifold reset to the next zone
+
 int eepromAddrNumSchedules = 0; // stored at first address
-uint32_t aSprinklerScheduleBits = 0x00;
+uint32_t sprinklerScheduleBitfield = 0x00;
 uint32_t sprinklerScheduleBitsArray[7] = {0};
 
 // WiFi settings
@@ -70,7 +94,6 @@ void setup() {
   server.begin();
   GetSetCurrentTime();
   PrintCurrentTime();
-  getScheduleFromEEPROM();
   setupAlarms();
 }
 
@@ -125,16 +148,37 @@ void connectToWiFi() {
 }
 
 void getScheduleFromEEPROM() {
-  uint32_t scheduleBits = 0;
-  uint32_t numberOfSchedules = readUint32FromEEPROM(eepromAddrNumSchedules);
+  uint32_t scheduleBitfield = 0;
+  uint8_t numberOfSchedules = readUint32FromEEPROM(eepromAddrNumSchedules);
   Serial.println("numberOfSchedules in EEPROM: " + String(numberOfSchedules));
   if (numberOfSchedules > 7) { numberOfSchedules = 0; }
   Serial.println("numberOfSchedules: " + String(numberOfSchedules));
 }
 
+void writeScheduleToEEPROM() {
+}
+
 void setupAlarms() {
-  Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);
-  Alarm.alarmRepeat(dowSaturday, 6, 0, 1, ScheduledSprinklerOn);
+  
+  /*
+  get array of schedule bitfields from EEPROM
+  for i=0 to length(array)-1
+
+
+  zones = getNumberZones();
+  durationSeconds = getDuration() * 60;
+  numberSchedules = getNumberSchedules();
+  getSchedules
+
+  */
+
+  // getScheduleFromEEPROM();
+  
+  if (sprinklerScheduleArray.length() <= 0) {
+    Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);  // these are defaults: Saturday and Wednesday at 6:00 AM
+    Alarm.alarmRepeat(dowSaturday, 6, 0, 1, ScheduledSprinklerOn);
+  }
+  
   Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
 }
 
