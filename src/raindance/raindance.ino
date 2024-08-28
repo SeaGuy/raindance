@@ -307,15 +307,18 @@ String readJsonBody(WiFiClient& client) {
 void processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
   Serial.println("Processing schedule command");
   
-  int numberOfZones = (int)parsedData["numberOfZones"];
-  int duration = (int)parsedData["duration"];
-  uint32_t aSprinklerScheduleBits = 0x00;
-
   JSONVar scheduleArray = parsedData["schedule"];
 
+  int numberOfZones = (int)parsedData["numberOfZones"];
+  int duration = (int)parsedData["duration"];
+  int numberOfTimeSchedules = scheduleArray.length();
+  uint32_t aSprinklerScheduleBits = 0x00;
+
   Serial.println("Received Schedule Parameters:");
-  Serial.println("Number of Zones: " + String(numberOfZones));
-  Serial.println("Duration per Zone: " + String(duration) + " minutes");
+  Serial.println("\tNumber of zones: " + String(numberOfZones) + " zones");
+  Serial.println("\tDuration per zone: " + String(duration) + " minutes");
+  Serial.println("\tNumber of time schedules: " + String(numberOfTimeSchedules) + " time schedules");
+
 
   for (int i = 0; i < scheduleArray.length(); i++) {
     int dayOfWeek = (uint32_t)scheduleArray[i]["dayOfWeek"];
@@ -324,9 +327,43 @@ void processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + String(time));
     aSprinklerScheduleBits = aSprinklerScheduleBits | dayOfWeek;
     Serial.println("aSprinklerScheduleBits: " + String(aSprinklerScheduleBits));
-
   }
 
+  if ( (numberOfZones >=1 && numberOfZones <=4) && (duration >=1 && duration <= 120) && (numberOfTimeSchedules >= 1 && numberOfTimeSchedules <=7)) {
+    char timeString[6];
+    mySprinklerSchedule.zones = numberOfZones;
+    mySprinklerSchedule.durationMinutes = duration;
+    mySprinklerSchedule.numberOfTimeSchedules = numberOfTimeSchedules;
+    for (int i = 0; i < scheduleArray.length(); i++) {
+
+      mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek = scheduleArray[i]["dayOfWeek"];
+      mySprinklerSchedule.myTimeSchedule[i].hour = scheduleArray[i]["hour"];
+      mySprinklerSchedule.myTimeSchedule[i].minute = scheduleArray[i]["minute"];
+
+      int dayOfWeek = (uint32_t)scheduleArray[i]["dayOfWeek"];
+      // double time = (double)scheduleArray[i]["time"];  // time since 1970
+      String timeValue = (const char*) scheduleArray[0]["time"];
+      Serial.println("timeValue: " + timeValue);
+
+      strcpy(timeString, timeValue.c_str());  // time "HH:mm"
+      Serial.print("timeString: ");
+      Serial.println(timeString);
+
+
+
+      String hourString = timeValue.substring(0, 2);
+      String minuteString = timeValue.substring(3, 5);
+
+      mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek = (uint8_t)dayOfWeek;
+      mySprinklerSchedule.myTimeSchedule[i].hour =    (uint8_t)hourString.toInt();
+      mySprinklerSchedule.myTimeSchedule[i].minute =  (uint8_t)minuteString.toInt();
+
+      Serial.println("Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", timeString: " + timeString);
+      aSprinklerScheduleBits = aSprinklerScheduleBits | dayOfWeek;
+      Serial.println("aSprinklerScheduleBits: " + String(aSprinklerScheduleBits));
+    }
+  }
+  PrintSprinklerSchedule();
   responseObj["status"] = "Schedule updated";
 }
 
@@ -366,10 +403,22 @@ void PrintCurrentTime() {
   }
 }
 
+
 void PrintSprinklerSchedule() {
   Serial.println("PrintSprinklerSchedule(): ");
+  Serial.print("\tzones: ");
+  Serial.println(mySprinklerSchedule.zones);
+  Serial.print("\tdurationMinutes: ");
+  Serial.println(mySprinklerSchedule.durationMinutes);
+  Serial.print("\tnumberOfTimeSchedules: ");
+  Serial.println(mySprinklerSchedule.numberOfTimeSchedules);
+  PrintSprinklerTimeSchedule();
+}
+
+void PrintSprinklerTimeSchedule() {
+  Serial.println("\tPrintSprinklerTimeSchedule(): ");
   for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
-      Serial.print("\tdayOfTheWeek: ");
+      Serial.print("\t\tdayOfTheWeek: ");
       Serial.print(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
       Serial.print(", Time: ");
       Serial.print(mySprinklerSchedule.myTimeSchedule[i].hour);
