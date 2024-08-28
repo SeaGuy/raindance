@@ -63,6 +63,31 @@ int eepromAddrNumSchedules = 0; // stored at first address
 uint32_t sprinklerScheduleBitfield = 0x00;
 uint32_t sprinklerScheduleBitsArray[7] = {0};
 
+// Step 1: Define the structure
+struct TimeSchedule {
+    uint8_t dayOfTheWeek;  // 0-6 for Sunday-Saturday
+    uint8_t hour;          // 0-23 for hours of the day
+    uint8_t minute;        // 0-59 for minutes of the hour
+};
+
+struct SprinklerSchedule {
+  uint8_t zones;
+  uint8_t durationMinutes;
+  uint8_t numberOfTimeSchedules;
+  TimeSchedule myTimeSchedule[7];
+};
+
+// create a default
+SprinklerSchedule mySprinklerSchedule = {
+  3,
+  30,
+  2,
+  {
+    { 3, 6, 0 },
+    { 6, 6, 0 }
+  }
+};
+
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
 const char password[] = "287860664144";
@@ -112,7 +137,8 @@ void loop() {
     Serial.println("relay is ON");
   } else {
     Serial.println("relay is OFF");
-  }
+  };
+  PrintSprinklerSchedule();
 }
 
 void setupSerial() {
@@ -173,8 +199,8 @@ void setupAlarms() {
   */
 
   // getScheduleFromEEPROM();
-  
-  if (sprinklerScheduleArray.length() <= 0) {
+
+  if (sizeof(mySprinklerSchedule.myTimeSchedule) <= 0) {
     Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);  // these are defaults: Saturday and Wednesday at 6:00 AM
     Alarm.alarmRepeat(dowSaturday, 6, 0, 1, ScheduledSprinklerOn);
   }
@@ -337,6 +363,18 @@ void PrintCurrentTime() {
     Serial.println();
   } else {
     Serial.println("Time is NOT Set!");
+  }
+}
+
+void PrintSprinklerSchedule() {
+  Serial.println("PrintSprinklerSchedule(): ");
+  for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
+      Serial.print("\tdayOfTheWeek: ");
+      Serial.print(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
+      Serial.print(", Time: ");
+      Serial.print(mySprinklerSchedule.myTimeSchedule[i].hour);
+      Serial.print(":");
+      Serial.println(mySprinklerSchedule.myTimeSchedule[i].minute);
   }
 }
 
