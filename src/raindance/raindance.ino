@@ -79,6 +79,18 @@ struct SprinklerSchedule {
 
 // create a default
 SprinklerSchedule mySprinklerSchedule = {
+  4,
+  10,
+  3,
+  {
+    { 0, 1, 13 },
+    { 3, 7, 7 },
+    {6, 23, 11}
+  }
+};
+
+/*
+SprinklerSchedule mySprinklerSchedule = {
   3,
   30,
   2,
@@ -87,6 +99,7 @@ SprinklerSchedule mySprinklerSchedule = {
     { 6, 6, 0 }
   }
 };
+*/
 
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
@@ -106,13 +119,30 @@ const int relayPin = 7;
 int relayState = 0;
 
 // Function prototypes
+void setup();
+void loop();
+void setupSerial();
+void setupRelay();
+void connectToWiFi();
+void getScheduleFromEEPROM();
+void writeScheduleToEEPROM();
+void setupAlarms();
+void handleClientRequests();
 void handleGetRequest(String command, JSONVar& responseObj);
 void handlePostRequest(WiFiClient& client, JSONVar& responseObj);
 String readHeaders(WiFiClient& client);
 String readJsonBody(WiFiClient& client);
 bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj);
-void writeScheduleToEEPROM();
-void getScheduleFromEEPROM();
+void ScheduledSprinklerOn();
+void ScheduledSprinklerOff();
+void PrintCurrentTime();
+void PrintSprinklerSchedule();
+void PrintSprinklerTimeSchedule();
+void GetSetCurrentTime();
+uint16_t readUint16FromEEPROM(int address);
+void writeUint32ToEEPROM(int address, uint32_t value);
+void eepromDump(int address);
+
 
 void setup() {
   setupSerial();
@@ -121,6 +151,10 @@ void setup() {
   server.begin();
   GetSetCurrentTime();
   PrintCurrentTime();
+  eepromDump(8);
+  writeScheduleToEEPROM();
+  eepromDump(8);
+  getScheduleFromEEPROM();
   setupAlarms();
 }
 
@@ -133,13 +167,12 @@ void loop() {
   relayState = digitalRead(relayPin);
   Serial.print("relayState: ");
   Serial.println(relayState);
-
-
   if (relayState == HIGH) {
     Serial.println("relay is ON");
   } else {
     Serial.println("relay is OFF");
   };
+
   PrintSprinklerSchedule();
 }
 
@@ -176,36 +209,68 @@ void connectToWiFi() {
 }
 
 void getScheduleFromEEPROM() {
+  bool success = false;
   Serial.println("getScheduleFromEEPROM");
-  uint16_t value = 0xFFFF;
+  uint16_t value = 0x0000;
   
   uint8_t numZones = (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_ZONES);
   uint8_t numMinutes = (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_MINUTES);
   uint8_t numScheds = (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_SCHEDS);
+  TimeSchedule eepromTimeSchedule[7] = {0};
 
   Serial.println("getScheduleFromEEPROM->numZones in EEPROM: " + String(numZones));
   Serial.println("getScheduleFromEEPROM->numMinutes in EEPROM: " + String(numMinutes));
   Serial.println("getScheduleFromEEPROM->numScheds in EEPROM: " + String(numScheds));
 
-  //mySprinklerSchedule.zones = numZones;
-  //mySprinklerSchedule.durationMinutes = numMinutes;
-  //mySprinklerSchedule.numberOfTimeSchedules = numScheds;
+  if (numScheds >= 1) {
+    for (int i = 0; i <= ((int)numScheds - 1); i++) { 
+        Serial.println("getScheduleFromEEPROM->i: " + String(i));
+        value = readUint16FromEEPROM(EEPROM_ADDR_FIRST_SCHED + (2* i));
+        Serial.println("readUint16FromEEPROM(" + String(EEPROM_ADDR_FIRST_SCHED + (2 * i)) + "): " + String(value));
+        //eepromTimeSchedule[i].dayOfTheWeek = (uint8_t) ((value <<14) & 0xE000);
+        eepromTimeSchedule[i].dayOfTheWeek = (uint8_t)(value & 0x0007);
 
-  /*struct SprinklerSchedule {
+        Serial.println("eepromTimeSchedule[" + String(i) + "].dayOfTheWeek: " + String(eepromTimeSchedule[i].dayOfTheWeek));
+
+        //eepromTimeSchedule[i].hour = 
+        //eepromTimeSchedule[i].minute = 
+
+    }
+  }
+}
+
+    /***************
+     sprinkler time schedule bitfield
+      bits    description  
+      ---     -----------
+      0-2     day of the week (0=Sunday, 6=Saturday)
+      3-13    time of day in minutes (1=12:00AM; 1440=11:59PM; 121=2:01AM)
+  1111111100000
+  struct SprinklerSchedule {
   uint8_t zones;
   uint8_t durationMinutes;
   uint8_t numberOfTimeSchedules;
   TimeSchedule myTimeSchedule[7];
+
+  struct TimeSchedule {
+    uint8_t dayOfTheWeek;  // 0-6 for Sunday-Saturday
+    uint8_t hour;          // 0-23 for hours of the day
+    uint8_t minute;        // 0-59 for minutes of the hour
 };
-#define EEPROM_ADDR_NUM_ZONES 0
-#define EEPROM_ADDR_NUM_MINUTES 1
-#define EEPROM_ADDR_NUM_SCHEDS 2
+};
+
 #define EEPROM_ADDR_FIRST_SCHED 3
 
 value |= ((uint32_t)EEPROM.read(address + 2)) << 8;
     value |= (uint32_t)EEPROM.read(address + 3);
-    return value;*/
+    return value;
+    
+
+  //mySprinklerSchedule.zones = numZones;
+  //mySprinklerSchedule.durationMinutes = numMinutes;
+  //mySprinklerSchedule.numberOfTimeSchedules = numScheds;
 }
+************/
 
 void writeScheduleToEEPROM() {
   Serial.println("writeScheduleToEEPROM");
@@ -216,10 +281,10 @@ void writeScheduleToEEPROM() {
   for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
     TimeSchedule myTimeSchedule = mySprinklerSchedule.myTimeSchedule[i];
     uint16_t myBitField = createSprinklerTimeScheduleBitfield(myTimeSchedule);
-    storeUint16ToEEPROM(int(3 + (i * 2)), myBitField);
+    Serial.println("writeScheduleToEEPROM->mySprinklerSchedule.myTimeSchedule[" + String(i) + "]->myBitField: " + String(myBitField));
+    writeUint16ToEEPROM(EEPROM_ADDR_FIRST_SCHED + (i * 2), myBitField);
   }
 }
-
 
 void setupAlarms() {
   // getScheduleFromEEPROM();
@@ -230,7 +295,6 @@ void setupAlarms() {
   }
   Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
 }
-
 
 void handleClientRequests() {
   Serial.println("start handleClientRequests()");
@@ -265,7 +329,6 @@ void handleClientRequests() {
   }
 }
 
-
 void handleGetRequest(String command, JSONVar& responseObj) {
   Serial.println("Processing GET request with command: " + command);
   
@@ -284,7 +347,6 @@ void handleGetRequest(String command, JSONVar& responseObj) {
   }
 }
 
-
 void handlePostRequest(WiFiClient& client, JSONVar& responseObj) {
   Serial.println("handlePostRequest()");
   String jsonString = readJsonBody(client);
@@ -302,7 +364,6 @@ void handlePostRequest(WiFiClient& client, JSONVar& responseObj) {
     }
   }
 }
-
 
 String readHeaders(WiFiClient& client) {
   String headers = "";
@@ -324,7 +385,6 @@ String readJsonBody(WiFiClient& client) {
   }
   return jsonBody;
 }
-
 
 bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
   bool success = false;
@@ -386,7 +446,6 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
   return success;
 }
 
-
 void ScheduledSprinklerOn() {
   Serial.println("ScheduledSprinklerOn");
   digitalWrite(relayPin, HIGH);
@@ -422,7 +481,6 @@ void PrintCurrentTime() {
     Serial.println("Time is NOT Set!");
   }
 }
-
 
 void PrintSprinklerSchedule() {
   Serial.println("PrintSprinklerSchedule(): ");
@@ -473,8 +531,8 @@ void GetSetCurrentTime() {
   }
 }
 
-void storeUint32ToEEPROM(int address, uint32_t value) {
-    // Store each byte of the uint32_t value into EEPROM
+void writeUint32ToEEPROM(int address, uint32_t value) {
+    // Write each byte of the uint32_t value into EEPROM
     EEPROM.write(address, (value >> 24) & 0xFF);        // Most significant byte
     EEPROM.write(address + 1, (value >> 16) & 0xFF);
     EEPROM.write(address + 2, (value >> 8) & 0xFF);
@@ -491,17 +549,21 @@ uint32_t readUint32FromEEPROM(int address) {
     return value;
 }
 
-void storeUint16ToEEPROM(int address, uint16_t value) {
-    // Store each byte of the uint16_t value into EEPROM
-    EEPROM.write(address + 2, (value >> 8) & 0xFF);     // Most significant byte
-    EEPROM.write(address + 3, value & 0xFF);            // Least significant byte
+void writeUint16ToEEPROM(int address, uint16_t value) {
+    // Write each byte of the uint16_t value into EEPROM
+    EEPROM.write(address, (value >> 8) & 0xFF);     // Most significant byte
+    Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address) + "]->value: " + String((value >> 8) & 0xFF));
+    EEPROM.write(address + 1, value & 0xFF);            // Least significant byte
+    Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address + 1) + "]->value: " + String(value & 0xFF));
 }
 
-uint32_t readUint16FromEEPROM(int address) {
+uint16_t readUint16FromEEPROM(int address) {
     // Read each byte from the EEPROM and reconstruct the uint16_t value
+    Serial.println("readUint16FromEEPROM()");
     uint16_t value = 0;
-    value |= ((uint32_t)EEPROM.read(address)) << 8;
-    value |= (uint32_t)EEPROM.read(address + 1);
+    value |= ((uint16_t)EEPROM.read(address)) << 8;
+    value |= (uint16_t)EEPROM.read(address + 1);
+    Serial.println("readUint16FromEEPROM->value: " + String(value));
     return value;
 }
 
@@ -522,16 +584,26 @@ struct TimeSchedule {
 
 uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule myTimeSchedule) {
   uint16_t myBitField = 0x0000;
+  uint16_t minutes = 0x0000;
   Serial.println("createSprinklerTimeScheduleBitfield->dayOfTheWeek: " + String(myTimeSchedule.dayOfTheWeek));
   Serial.println("createSprinklerTimeScheduleBitfield->hour: " + String(myTimeSchedule.hour));
   Serial.println("createSprinklerTimeScheduleBitfield->minute: " + String(myTimeSchedule.minute));
 
-  myBitField = myTimeSchedule.dayOfTheWeek & 0xFFFF;
+  myBitField = myTimeSchedule.dayOfTheWeek & 0x0007;
   Serial.println("createSprinklerTimeScheduleBitfield->myBitField->dayOfTheWeek: " + String(myBitField));
 
-  uint16_t minutes = (myTimeSchedule.hour * 60) + myTimeSchedule.minute;
-  myBitField = (myBitField >> 3) & minutes;
+  minutes = (myTimeSchedule.hour * 60) + myTimeSchedule.minute;
+  myBitField = myBitField | minutes<<3;
   Serial.println("createSprinklerTimeScheduleBitfield->myBitField->minutes: " + String(myBitField >> 3));
   Serial.println("createSprinklerTimeScheduleBitfield->myBitField: " + String(myBitField));
+  return myBitField;
+}
+
+void eepromDump(int maxAddress) {
+  uint8_t value = 0;
+  for (int i = 0; i <= maxAddress; i++) {
+    value = EEPROM.read(i);
+    Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
+  }
 }
 
