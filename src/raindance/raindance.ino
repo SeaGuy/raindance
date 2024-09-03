@@ -49,6 +49,8 @@ address   type        description of value
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
 
+#define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
+
 
 #include <SPI.h>
 #include <WiFiNINA.h>
@@ -79,7 +81,7 @@ struct SprinklerSchedule {
   uint8_t zones;          // 1-EEPROM_MAX_NUM_ZONES
   uint8_t durationMinutes;
   uint8_t numberOfTimeSchedules;
-  TimeSchedule myTimeSchedule[7];
+  TimeSchedule myTimeSchedule[MAX_NUM_SCHEDS];
 };
 
 // create a default
@@ -88,8 +90,8 @@ SprinklerSchedule mySprinklerSchedule = {
   10,
   3,
   {
-    { 0, 1, 13 },
-    { 2, 10, 34 },
+    {0, 1, 13 },
+    {2, 18, 24 },
     {6, 23, 11}
   }
 };
@@ -147,6 +149,10 @@ void GetSetCurrentTime();
 uint16_t readUint16FromEEPROM(int address);
 void writeUint32ToEEPROM(int address, uint32_t value);
 void eepromDump(int address);
+void validateSchedule();
+uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule aTimeSchedule);
+void writeUint16ToEEPROM(int address, uint16_t value);
+bool timeScheduleValidated(uint8_t numScheds);
 
 
 void setup() {
@@ -156,7 +162,7 @@ void setup() {
   server.begin();
   GetSetCurrentTime();
   PrintCurrentTime();
-  eepromDump(8);
+  eepromDump(EEPROM_MAX_ADDRESS);
   getScheduleFromEEPROM();
   PrintSprinklerSchedule();
   validateSchedule();
@@ -293,32 +299,27 @@ void writeScheduleToEEPROM() {
 
 void setupAlarms() {
   // set alarms based on mySprinklerSchedule.myTimeSchedule
-  int numScheds = mySprinklerSchedule.myTimeSchedule.numberOfTimeSchedules;
+  int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
+  int myDayOfTheWeek = -1;
   Serial.println("setupAlarms->numScheds: " + String(numScheds));
-  
-      // mySprinklerSchedule.myTimeSchedule
-
-      /*
-      int8_t dayOfTheWeek;  // 0-6 for Sunday-Saturday
-      uint8_t hour;          // 0-23 for hours of the day
-      uint8_t minute;        // 0-59 for minutes of the hour
-      */
-
   for (int i = 0; i < numScheds; i++) {
-    if (mySprinklerSchedule.myTimeSchedule.dayOfTheWeek == 0) {
-      Alarm.alarmRepeat(dowSunday, 0, 0, 1, bogusSprinklerScheduleFunction);
+    int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
+    int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
+    //if (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek == 0) {
+      //Alarm.alarmRepeat(dowSunday, hour, minute, 0, ScheduledSprinklerOn);
+    //}
+    Alarm.alarmRepeat(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
     }
   }
-
-  
+  /*
   Alarm.alarmRepeat(dowMonday, 0, 0, 1, bogusSprinklerScheduleFunction);
   Alarm.alarmRepeat(dowTuesday, 0, 0, 1, bogusSprinklerScheduleFunction);
-  Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);  // these are defaults: Saturday and Wednesday at 6:00 AM
+  Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);  // these are defaults: Saturday and Wednesday at 6:01 AM
   Alarm.alarmRepeat(dowThursday, 0, 0, 1, bogusSprinklerScheduleFunction);
   Alarm.alarmRepeat(dowFriday, 0, 0, 1, bogusSprinklerScheduleFunction);
   Alarm.alarmRepeat(dowSaturday, 6, 0, 1, ScheduledSprinklerOn);
-  Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
-}
+  Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);*/
+
 
 void handleClientRequests() {
   Serial.println("start handleClientRequests()");
@@ -635,9 +636,9 @@ void bogusSprinklerScheduleFunction() {
 }
 
 void clearEEPROM() {
-  int maxEEPROMAddress = EEPROM_ADDR_FIRST_SCHED + (EEPROM_MAX_NUM_SCHEDS * 2);
-  Serial.println("clearEEPROM->maxEEPROMAddress: " + String(maxEEPROMAddress);
-  for int addr = 0; i <= maxEEPROMAddress; addr++) {
+  int maxEEPROMAddress = EEPROM_ADDR_FIRST_SCHED + (MAX_NUM_SCHEDS * 2);
+  Serial.println("clearEEPROM->maxEEPROMAddress: " + String(maxEEPROMAddress));
+  for (int addr = 0; addr <= maxEEPROMAddress; addr++) {
     EEPROM.write(addr, (uint8_t)0x00);
   }
 }
@@ -656,50 +657,63 @@ void setDefaultSchedule() {
 }
 
 void validateSchedule() {
-  if (  (mySprinklerSchedule.zones >= 0) && (mySprinklerSchedule.zones <= MAX_NUM_ZONES) &&
-        (mySprinklerSchedule.durationMinutes >= 1) && (mySprinklerSchedule.durationMinutes <= MAX_DURATION_PER_ZONE) &&
-        (mySprinklerSchedule.numberOfTimeSchedules >= 1) && (mySprinklerSchedule.numberOfTimeSchedules <= MAX_NUM_SCHEDS) && 
-        timeScheduleVaidated(mySprinklerSchedule.numberOfTimeSchedules)
-      ) {
-        // all good!
-      } else {
-        Serial.println("validateSchedule->dumping existing EEPROM");
-        eepromDump();
-        Serial.println("validateSchedule->clearing existing EEPROM");
-        clearEEPROM();
-        Serial.println("validateSchedule->dumping cleared EEPROM");
-        eepromDump();
-        Serial.println("validateSchedule->printing existing sprinkler schedule");
-        PrintSprinklerSchedule();
-        Serial.println("validateSchedule->setting default sprinkler schedule");
-        setDefaultSchedule();
-        Serial.println("validateSchedule->printing default sprinkler schedule");
-        PrintSprinklerSchedule();
-        Serial.println("validateSchedule->writing new schedule to EEPROM");
-        writeScheduleToEEPROM();
-        Serial.println("validateSchedule->dumping new EEPROM");
-        eepromDump();
-      }
+  bool problem = false;
+  if (!((mySprinklerSchedule.zones >= 0) && (mySprinklerSchedule.zones <= MAX_NUM_ZONES))) {
+    Serial.println("validateSchedule->problem with number of zones: " + String(mySprinklerSchedule.zones));
+    problem = true; 
+    }
+
+  if (!((mySprinklerSchedule.durationMinutes >= 1) && (mySprinklerSchedule.durationMinutes <= MAX_DURATION_PER_ZONE))) { 
+    Serial.println("validateSchedule->problem with durationMinutes: " + String(mySprinklerSchedule.durationMinutes));
+    problem = true; 
   }
+
+  if (!((mySprinklerSchedule.numberOfTimeSchedules >= 1) && (mySprinklerSchedule.numberOfTimeSchedules <= MAX_NUM_SCHEDS))) { 
+    Serial.println("validateSchedule->problem with numberOfTimeSchedules: " + String(mySprinklerSchedule.numberOfTimeSchedules));
+    problem = true; 
+  }
+
+  if (!timeScheduleValidated(mySprinklerSchedule.numberOfTimeSchedules)) { 
+    Serial.println("validateSchedule->problem with timeScheduleValidated()");
+    problem = true; 
+  }
+  if (problem) {
+      Serial.println("validateSchedule->dumping existing EEPROM");
+      eepromDump(EEPROM_MAX_ADDRESS);
+      Serial.println("validateSchedule->clearing existing EEPROM");
+      clearEEPROM();
+      Serial.println("validateSchedule->dumping cleared EEPROM");
+      eepromDump(EEPROM_MAX_ADDRESS);
+      Serial.println("validateSchedule->printing existing sprinkler schedule");
+      PrintSprinklerSchedule();
+      Serial.println("validateSchedule->setting default sprinkler schedule");
+      setDefaultSchedule();
+      Serial.println("validateSchedule->printing default sprinkler schedule");
+      PrintSprinklerSchedule();
+      Serial.println("validateSchedule->writing new schedule to EEPROM");
+      writeScheduleToEEPROM();
+      Serial.println("validateSchedule->dumping new EEPROM");
+      eepromDump(EEPROM_MAX_ADDRESS);
+    }
 }
 
-bool timeScheduleVaidated(uint8_t numScheds) {
+bool timeScheduleValidated(uint8_t numScheds) {
   bool valid = false;
-  int actualNumberSchedules = 0;
-  if ((sizeof(mySprinklerSchedule.myTimeSchedule) >= 1) && (sizeof(mySprinklerSchedule.myTimeSchedule[0] >= 1)) {
-    actualNumberSchedules = sizeof(mySprinklerSchedule.myTimeSchedule) / sizeof(mySprinklerSchedule.myTimeSchedule[0]);
-  }
-  if (actualNumberSchedules == numScheds) {
-    for (int i = 0; i < actualNumberSchedules; i++) {
+  Serial.println("timeScheduleValidated->numScheds: " + String(numScheds));
+  if ((numScheds >= 1) && (numScheds <= MAX_NUM_SCHEDS)) {
+    for (int i = 0; i < numScheds; i++) {
       if (  (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek >= 0) && (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek <= 6) &&
             (mySprinklerSchedule.myTimeSchedule[i].hour >= 0) && (mySprinklerSchedule.myTimeSchedule[i].hour <= 23) &&
             (mySprinklerSchedule.myTimeSchedule[i].minute >= 0) && (mySprinklerSchedule.myTimeSchedule[i].minute <= 59) ) {
         valid = true;
       } else {
+        Serial.println("timeScheduleVaidated->problem with number of time schedule values out of range; breaking out of loop");
         valid = false;
         break;
       }
     }
+  } else {
+      Serial.println("timeScheduleVaidated->problem with number of shedules passed in): " + String(numScheds));
   }
   return valid;
 }
