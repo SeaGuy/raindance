@@ -91,7 +91,7 @@ SprinklerSchedule mySprinklerSchedule = {
   3,
   {
     {0, 1, 13 },
-    {2, 18, 24 },
+    {2, 19, 17 },
     {6, 23, 11}
   }
 };
@@ -303,13 +303,18 @@ void setupAlarms() {
   int myDayOfTheWeek = -1;
   Serial.println("setupAlarms->numScheds: " + String(numScheds));
   for (int i = 0; i < numScheds; i++) {
+    int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
     int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
     //if (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek == 0) {
       //Alarm.alarmRepeat(dowSunday, hour, minute, 0, ScheduledSprinklerOn);
     //}
+    Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
+    Serial.println("setupAlarms->hour: " + String(hour));
+    Serial.println("setupAlarms->minute: " + String(minute));
     Alarm.alarmRepeat(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
     }
+    Alarm.delay(1000); // needed to activate alarms
   }
   /*
   Alarm.alarmRepeat(dowMonday, 0, 0, 1, bogusSprinklerScheduleFunction);
@@ -427,7 +432,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     String time = scheduleArray[i]["time"];
     Serial.println("processScheduleCommand->Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + time);
   }
-  if ( (numberOfZones >=1 && numberOfZones <=4) && (duration >=1 && duration <= 120) && (numberOfTimeSchedules >= 1 && numberOfTimeSchedules <=7)) {
+  if ((numberOfZones >=1 && numberOfZones <= MAX_NUM_ZONES) && (duration >= 1 && duration <= MAX_DURATION_PER_ZONE) && (numberOfTimeSchedules >= 1 && numberOfTimeSchedules <= MAX_NUM_SCHEDS)) {
     char timeString[6] = "";
     mySprinklerSchedule.zones = numberOfZones;
     mySprinklerSchedule.durationMinutes = duration;
@@ -464,6 +469,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("processScheduleCommand->schedule updated");
     writeScheduleToEEPROM();
     PrintSprinklerSchedule();
+    setupAlarms();
   } else {
       Serial.println("processScheduleCommand->schedule NOT updated");
       PrintSprinklerSchedule();
