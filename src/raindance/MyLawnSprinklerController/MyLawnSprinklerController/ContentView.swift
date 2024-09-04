@@ -17,7 +17,8 @@ struct ContentView: View {
     @State private var responseMessage: String = "Waiting for response..."
     @State private var isSprinklerOn: Bool = false // State to track if the sprinkler is on
     @State private var blinkOpacity: Double = 1.0 // for the blinking effect on "Sprinkler is ON"
-    
+    @State private var showAlert = false  // to limit number of schedule entries
+
     
     var body: some View {
         
@@ -112,13 +113,20 @@ struct ContentView: View {
 
             HStack {
                 Button("Add") {
-                    schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
+                    if schedule.count < 2 {
+                        schedule.append(SprinklerSchedule(dayOfWeek: 0, time: Date()))
+                    } else {
+                        showAlert = true // Trigger the alert
+                    }
                 }
                 .padding()
                 .background(Color.gray)
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .shadow(radius: 5)
+                .alert(isPresented: $showAlert) {
+                    Alert(title: Text("Limit Reached"), message: Text("You can only add up to 2 schedules."), dismissButton: .default(Text("OK")))
+                }
                 
                 Button("Upload") {
                     sendSetScheduleCommand()

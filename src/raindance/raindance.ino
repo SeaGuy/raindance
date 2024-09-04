@@ -45,7 +45,7 @@ address   type        description of value
 #define EEPROM_ADDR_NUM_SCHEDS 2
 #define EEPROM_ADDR_FIRST_SCHED 3
 
-#define MAX_NUM_SCHEDS 6
+#define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
 
@@ -58,14 +58,15 @@ address   type        description of value
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Time.h>
+#define dtNBR_ALARMS 128
 #include <TimeAlarms.h>
 #include <TimeLib.h>
 #include <ArduinoHttpClient.h>
 #include <Arduino_JSON.h>
 
-int zones = 3;                      // value could change by XXX command
-int durationSeconds = 10;           // value could change by XXX command
 const int interZoneDelay = 10000;   // 10-secondf pause to let the manifold reset to the next zone
+AlarmID_t schedAlarmID;     // Variable to store the alarm ID
+AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -84,29 +85,16 @@ struct SprinklerSchedule {
   TimeSchedule myTimeSchedule[MAX_NUM_SCHEDS];
 };
 
-// create a default
-SprinklerSchedule mySprinklerSchedule = {
-  4,
-  10,
-  3,
-  {
-    {0, 1, 13 },
-    {2, 19, 17 },
-    {6, 23, 11}
-  }
-};
-
-/*
+// create a default schedule
 SprinklerSchedule mySprinklerSchedule = {
   3,
   30,
   2,
   {
-    { 3, 6, 0 },
-    { 6, 6, 0 }
+    { 4, 6, 0 },
+    { 7, 6, 0 }
   }
 };
-*/
 
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
@@ -299,9 +287,11 @@ void writeScheduleToEEPROM() {
 
 void setupAlarms() {
   // set alarms based on mySprinklerSchedule.myTimeSchedule
+  // timeDayOfWeek_t is an enum in TimeLib.h {undefined=0, 1=Sunday, 2=Monday, etc.}
   int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
   int myDayOfTheWeek = -1;
   Serial.println("setupAlarms->numScheds: " + String(numScheds));
+  clearScheduleAlarms();
   for (int i = 0; i < numScheds; i++) {
     int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
     int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
@@ -312,20 +302,14 @@ void setupAlarms() {
     Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
     Serial.println("setupAlarms->hour: " + String(hour));
     Serial.println("setupAlarms->minute: " + String(minute));
-    Alarm.alarmRepeat(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
+    schedAlarmID = Alarm.alarmRepeat((mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek + 1), mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
+    Serial.println("setupAlarms->adding schedule alarm: " + String(schedAlarmID));
+    schedAlarmIDArray[i] = schedAlarmID;
     }
-    Alarm.delay(1000); // needed to activate alarms
+    // Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
+    // Alarm.delay(1000); // needed to activate alarms
   }
-  /*
-  Alarm.alarmRepeat(dowMonday, 0, 0, 1, bogusSprinklerScheduleFunction);
-  Alarm.alarmRepeat(dowTuesday, 0, 0, 1, bogusSprinklerScheduleFunction);
-  Alarm.alarmRepeat(dowWednesday, 6, 0, 1, ScheduledSprinklerOn);  // these are defaults: Saturday and Wednesday at 6:01 AM
-  Alarm.alarmRepeat(dowThursday, 0, 0, 1, bogusSprinklerScheduleFunction);
-  Alarm.alarmRepeat(dowFriday, 0, 0, 1, bogusSprinklerScheduleFunction);
-  Alarm.alarmRepeat(dowSaturday, 6, 0, 1, ScheduledSprinklerOn);
-  Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);*/
-
-
+  
 void handleClientRequests() {
   Serial.println("start handleClientRequests()");
   WiFiClient client = server.available();
@@ -478,13 +462,17 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
 }
 
 void ScheduledSprinklerOn() {
-  Serial.println("ScheduledSprinklerOn");
+  int duration = 0;
   digitalWrite(relayPin, HIGH);
-  Alarm.timerOnce(durationSeconds, ScheduledSprinklerOff);
+  duration = (int)(mySprinklerSchedule.durationMinutes * 60);
+  Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
+  Alarm.timerOnce(duration, ScheduledSprinklerOff);
+  // Alarm.delay(256); // needed to activate alarms
 }
 
 void ScheduledSprinklerOff() {
-  Serial.println("ScheduledSprinklerOff");
+  int zones = (int)(mySprinklerSchedule.zones);
+  Serial.println("ScheduledSprinklerOff->zones: " + String(zones));
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
@@ -722,6 +710,13 @@ bool timeScheduleValidated(uint8_t numScheds) {
       Serial.println("timeScheduleVaidated->problem with number of shedules passed in): " + String(numScheds));
   }
   return valid;
+}
+
+void clearScheduleAlarms() {
+  for (int i =0; i < MAX_NUM_SCHEDS; i++) {
+    Serial.println("clearScheduleAlarms->clearing alarm: " + String(schedAlarmIDArray[i]));
+    Alarm.free(schedAlarmIDArray[i]);
+  }
 }
 
     
