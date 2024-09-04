@@ -48,6 +48,7 @@ address   type        description of value
 #define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
+#define INTER_ZONE_DELAY 30000           // 10-second pause to let the manifold reset to the next zone
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
@@ -58,18 +59,20 @@ address   type        description of value
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Time.h>
-#define dtNBR_ALARMS 128
+#define dtNBR_ALARMS 64
 #include <TimeAlarms.h>
 #include <TimeLib.h>
 #include <ArduinoHttpClient.h>
 #include <Arduino_JSON.h>
 
-const int interZoneDelay = 10000;   // 10-secondf pause to let the manifold reset to the next zone
-AlarmID_t schedAlarmID;     // Variable to store the alarm ID
+AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
 AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
+AlarmID_t getSetCurrentTimeAlarmID; 
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
+
+int zones = 1;
 
 // Step 1: Define the structure
 struct TimeSchedule {
@@ -141,6 +144,7 @@ void validateSchedule();
 uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule aTimeSchedule);
 void writeUint16ToEEPROM(int address, uint16_t value);
 bool timeScheduleValidated(uint8_t numScheds);
+void clearAlarms();
 
 
 void setup() {
@@ -290,24 +294,23 @@ void setupAlarms() {
   // timeDayOfWeek_t is an enum in TimeLib.h {undefined=0, 1=Sunday, 2=Monday, etc.}
   int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
   int myDayOfTheWeek = -1;
+  zones = (int)(mySprinklerSchedule.zones);
+
   Serial.println("setupAlarms->numScheds: " + String(numScheds));
-  clearScheduleAlarms();
+  clearAlarms();
   for (int i = 0; i < numScheds; i++) {
     int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
     int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
-    //if (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek == 0) {
-      //Alarm.alarmRepeat(dowSunday, hour, minute, 0, ScheduledSprinklerOn);
-    //}
     Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
     Serial.println("setupAlarms->hour: " + String(hour));
     Serial.println("setupAlarms->minute: " + String(minute));
     schedAlarmID = Alarm.alarmRepeat((mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek + 1), mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
-    Serial.println("setupAlarms->adding schedule alarm: " + String(schedAlarmID));
+    Serial.println("setupAlarms->adding schedule alarm ID: " + String(schedAlarmID));
     schedAlarmIDArray[i] = schedAlarmID;
     }
-    // Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
-    // Alarm.delay(1000); // needed to activate alarms
+    getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
+    Serial.println("setupAlarms->get-set-time alarm created with ID: " + String(getSetCurrentTimeAlarmID));
   }
   
 void handleClientRequests() {
@@ -467,16 +470,14 @@ void ScheduledSprinklerOn() {
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
   Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
   Alarm.timerOnce(duration, ScheduledSprinklerOff);
-  // Alarm.delay(256); // needed to activate alarms
 }
 
 void ScheduledSprinklerOff() {
-  int zones = (int)(mySprinklerSchedule.zones);
   Serial.println("ScheduledSprinklerOff->zones: " + String(zones));
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
-    delay(interZoneDelay);
+    delay(INTER_ZONE_DELAY);
     ScheduledSprinklerOn();
   }
 }
@@ -712,11 +713,15 @@ bool timeScheduleValidated(uint8_t numScheds) {
   return valid;
 }
 
-void clearScheduleAlarms() {
+void clearAlarms() {
+  // first clear scheduling alarms
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
-    Serial.println("clearScheduleAlarms->clearing alarm: " + String(schedAlarmIDArray[i]));
+    Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
   }
+  // next clear the get-set-time alarm
+  Serial.println("clearAlarms->clearing get-set-time alarm ID: " + String(getSetCurrentTimeAlarmID));
+  Alarm.free(getSetCurrentTimeAlarmID);
 }
 
     
