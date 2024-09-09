@@ -2,7 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     
-    let myArduinoIPAddress = "192.168.0.238";
+    let myArduinoIPAddress = "192.168.0.238"
+    let HEARTBEAT_INTERVAL: Double = 15
     
     @State private var month = 1
     @State private var day = 1
@@ -18,6 +19,7 @@ struct ContentView: View {
     @State private var isSprinklerOn: Bool = false // State to track if the sprinkler is on
     @State private var blinkOpacity: Double = 1.0 // for the blinking effect on "Sprinkler is ON"
     @State private var showAlert = false  // to limit number of schedule entries
+    @State private var timer: Timer? = nil // to send "HI!" command every 60 seconds
 
     
     var body: some View {
@@ -41,7 +43,7 @@ struct ContentView: View {
             HStack {
                 Button("ON") {
                     sendCommand(command: "ONN", httpMethod: "GET", params: [:])
-                    sendCommand(command: "HI!", httpMethod: "GET", params: [:])
+                    // sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
                 .background(Color.green)
@@ -51,7 +53,7 @@ struct ContentView: View {
                 
                 Button("OFF") {
                     sendCommand(command: "OFF", httpMethod: "GET", params: [:])
-                    sendCommand(command: "HI!", httpMethod: "GET", params: [:])
+                    // sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
                 .background(Color.gray)
@@ -147,6 +149,10 @@ struct ContentView: View {
             if isSprinklerOn {
                 startBlinking()
             }
+            startTimer()
+        }
+        .onDisappear {
+            stopTimer()
         }
         .onChange(of: isSprinklerOn) { newValue in
             if newValue {
@@ -350,8 +356,22 @@ struct ContentView: View {
             blinkOpacity = 1.0
         }
     }
-}
+    
+    private func startTimer() {
+            // Create a repeating timer that triggers every HEARTBEAT_INTERVAL seconds
+            timer = Timer.scheduledTimer(withTimeInterval: HEARTBEAT_INTERVAL, repeats: true) { _ in
+                sendCommand(command: "HI!", httpMethod: "GET", params: [:])
+            }
+    }
 
+    private func stopTimer() {
+            // Invalidate the timer when the view disappears to avoid memory leaks
+            timer?.invalidate()
+            timer = nil
+    }
+    
+    
+}
 
 struct SprinklerSchedule: Identifiable {
     var id = UUID()
