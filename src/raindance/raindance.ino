@@ -348,7 +348,6 @@ void handleClientRequests() {
 
 void handleGetRequest(String command, JSONVar& responseObj) {
   Serial.println("Processing GET request with command: " + command);
-  
   if (command == "ONN") {
     digitalWrite(relayPin, HIGH);
     responseObj["status"] = "Sprinkler is ON";
@@ -477,8 +476,8 @@ void ScheduledSprinklerOff() {
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
-    delay(INTER_ZONE_DELAY);
-    ScheduledSprinklerOn();
+    // delay(INTER_ZONE_DELAY);
+    Alarm.timerOnce(INTER_ZONE_DELAY, ScheduledSprinklerOn);
   }
 }
 
