@@ -65,7 +65,7 @@ struct ContentView: View {
             // Schedule settings and entries inside a bounding box
             GroupBox(label: Label("Schedule Settings", systemImage: "calendar")) {
                 VStack {
-                    Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...10)
+                    Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...4)
                         .padding([.top, .horizontal])
 
                     Stepper("Duration per Zone: \(duration) min", value: $duration, in: 0...60)
@@ -196,7 +196,6 @@ struct ContentView: View {
                 print("No response data received or unable to decode data.")
             }
         }
-        
         task.resume()
     }
     
