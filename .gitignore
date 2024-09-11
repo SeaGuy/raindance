@@ -32,6 +32,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# drawio backup files
+*.bkp
+
 # VIM files
 *.swn
 
