@@ -255,8 +255,8 @@ void setupAlarms() {
   int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
   int myDayOfTheWeek = -1;
   zones = (int)(mySprinklerSchedule.zones);
-
   Serial.println("setupAlarms->numScheds: " + String(numScheds));
+  Serial.println("setupAlarms->clearing alarms ..." );
   clearAlarms();
   for (int i = 0; i < numScheds; i++) {
     int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
@@ -615,17 +615,14 @@ void validateSchedule() {
     Serial.println("validateSchedule->problem with number of zones: " + String(mySprinklerSchedule.zones));
     problem = true; 
     }
-
   if (!((mySprinklerSchedule.durationMinutes >= 1) && (mySprinklerSchedule.durationMinutes <= MAX_DURATION_PER_ZONE))) { 
     Serial.println("validateSchedule->problem with durationMinutes: " + String(mySprinklerSchedule.durationMinutes));
     problem = true; 
   }
-
   if (!((mySprinklerSchedule.numberOfTimeSchedules >= 1) && (mySprinklerSchedule.numberOfTimeSchedules <= MAX_NUM_SCHEDS))) { 
     Serial.println("validateSchedule->problem with numberOfTimeSchedules: " + String(mySprinklerSchedule.numberOfTimeSchedules));
     problem = true; 
   }
-
   if (!timeScheduleValidated(mySprinklerSchedule.numberOfTimeSchedules)) { 
     Serial.println("validateSchedule->problem with timeScheduleValidated()");
     problem = true; 

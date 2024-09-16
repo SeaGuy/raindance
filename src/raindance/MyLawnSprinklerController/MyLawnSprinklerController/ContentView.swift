@@ -21,7 +21,6 @@ struct ContentView: View {
     @State private var showAlert = false  // to limit number of schedule entries
     @State private var timer: Timer? = nil // to send "HI!" command every 60 seconds
 
-    
     var body: some View {
         
         VStack {
@@ -368,8 +367,6 @@ struct ContentView: View {
             timer?.invalidate()
             timer = nil
     }
-    
-    
 }
 
 struct SprinklerSchedule: Identifiable {
