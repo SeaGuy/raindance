@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var blinkOpacity: Double = 1.0 // for the blinking effect on "Sprinkler is ON"
     @State private var showAlert = false  // to limit number of schedule entries
     @State private var timer: Timer? = nil // to send "HI!" command every 60 seconds
+    @State private var activeDaysBitfield: Int = 0 // New state variable for the bitfield
 
     var body: some View {
         
@@ -35,7 +36,6 @@ struct ContentView: View {
                     .foregroundColor(isSprinklerOn ? Color.green : Color.gray)
                     .opacity(isSprinklerOn && blinkOpacity == 0.0 ? 0.0 : 1.0) // Control opacity based on blinking state
                     .animation(isSprinklerOn ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .none, value: blinkOpacity)  // Start/stop animation based on sprinkler state
-                
             }
             .padding()
             
