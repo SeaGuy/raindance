@@ -39,6 +39,7 @@ struct ContentView: View {
             }
             .padding()
             
+           
             HStack {
                 Button("ON") {
                     sendCommand(command: "ONN", httpMethod: "GET", params: [:])
@@ -61,8 +62,24 @@ struct ContentView: View {
                 .shadow(radius: 5)
             }
             
+
+            
             // Schedule settings and entries inside a bounding box
             GroupBox(label: Label("Schedule Settings", systemImage: "calendar")) {
+                // Day LEDs
+                HStack {
+                    ForEach(0..<7) { index in
+                        VStack {
+                            Circle()
+                                .fill((activeDaysBitfield & (1 << index)) != 0 ? Color.green : Color.gray)
+                                .frame(width: 10, height: 10)
+                            Text(dayShortName(for: index))
+                                .font(.caption2)
+                        }
+                    }
+                }
+                .padding()
+     
                 VStack {
                     Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...4)
                         .padding([.top, .horizontal])
@@ -204,13 +221,45 @@ struct ContentView: View {
            let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let status = jsonResponse["status"] as? String {
             let year = String(status.prefix(4))
-            let lastCharacter = status.last
             
-            // Update the Sprinkler ON LED based on the last character
-            DispatchQueue.main.async {
-                isSprinklerOn = (lastCharacter == "1")
+            let bitfieldValue = status.dropFirst(21) // Get the bitfield value as a substring
+            print("bitfieldValue: \(bitfieldValue)")
+            if let uint16Value = UInt16(bitfieldValue) {
+                print("uint16Value \(uint16Value)")
+                var onoffstatus: Int = Int(uint16Value & 0x80)
+                let bitfield = Int(uint16Value & 0x7f)
+                print("onoffstatus: \(onoffstatus)")
+                print("bitfield: \(bitfield)")
+                onoffstatus = onoffstatus>>7 & 0x01
+                print("onoffstatus: \(onoffstatus)")
+
+                // Right-shift the value by 1 bit
+                //let shiftedValue = Int(uint16Value >> 1)
+                //print("The shifted value is \(shiftedValue)")
+                // Convert the bitfieldValue to an integer
+                //if let bitfield = shiftedValue as? Int {
+                    DispatchQueue.main.async {
+                        activeDaysBitfield = bitfield
+                    }
+                //let lastCharacter = status.last
+                
+               
+                // Update the Sprinkler ON LED based on the last character
+                DispatchQueue.main.async {
+                    //isSprinklerOn = (lastCharacter == "1")
+                    isSprinklerOn = (onoffstatus == 1)
+
+                }
+                
+                
+                //}
+            } else {
+                print("Conversion failed. The string does not represent a valid UInt16 value.")
             }
+                    
             
+            
+           
             if year == "1970" {
                 // If the year is "1970", call the functions to send the current date and time
                 sendDateTimeToArduino { response in
@@ -367,6 +416,12 @@ struct ContentView: View {
             timer?.invalidate()
             timer = nil
     }
+    
+    private func dayShortName(for index: Int) -> String {
+            // Return short names for the days of the week
+            let shortNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+            return shortNames[index]
+        }
 }
 
 struct SprinklerSchedule: Identifiable {

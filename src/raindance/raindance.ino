@@ -113,6 +113,8 @@ HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePo
 const int relayPin = 7;
 int relayState = 0;
 
+char hiTimeStamp[25];
+
 // Function prototypes
 void setup();
 void loop();
@@ -319,9 +321,47 @@ void handleGetRequest(String command, JSONVar& responseObj) {
       digitalWrite(relayPin, LOW);
       responseObj["status"] = "Sprinkler is OFF";
   } else if (command == "HI!") {
-      String timeStamp = String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
-      String sprinklerStateStr = String(digitalRead(relayPin));
-      responseObj["status"] = timeStamp + "::" + sprinklerStateStr;
+      int sprinklerStateInt = digitalRead(relayPin);
+      int daysoftheweek = 0x00;
+      for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
+        switch (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek) {
+          case 0:
+            daysoftheweek |= 0x01;
+            break;
+          case 1:
+            daysoftheweek |= 0x02;
+            break;
+          case 2:
+            daysoftheweek |= 0x04;
+            break;
+          case 3:
+            daysoftheweek |= 0x08;
+            break;
+          case 4:
+            daysoftheweek |= 0x10;
+            break;
+          case 5:
+            daysoftheweek |= 0x20;
+            break;
+          case 6:
+            daysoftheweek |= 0x40;
+            break;
+          default:
+            break;
+        }
+      }
+      Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
+
+      sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
+      
+      Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
+
+      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt);
+      
+      // String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
+      // String sprinklerStateStr = String(digitalRead(relayPin));
+      // responseObj["status"] = timeStamp + "::" + sprinklerStateStr;
+      responseObj["status"] = hiTimeStamp;
   } else {
       responseObj["error"] = "Invalid command";
   }
