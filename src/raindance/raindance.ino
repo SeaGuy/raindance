@@ -56,7 +56,7 @@ address   type        description of value
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Time.h>
-#define dtNBR_ALARMS 64
+#define dtNBR_ALARMS 16
 #include <TimeAlarms.h>
 #include <TimeLib.h>
 #include <ArduinoHttpClient.h>
@@ -65,6 +65,9 @@ address   type        description of value
 AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
 AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
 AlarmID_t getSetCurrentTimeAlarmID; 
+AlarmID_t onAlarmID;
+AlarmID_t offAlarmID;
+
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -324,6 +327,7 @@ void handleGetRequest(String command, JSONVar& responseObj) {
       int sprinklerStateInt = digitalRead(relayPin);
       int daysoftheweek = 0x00;
       for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
+        // replace with 2 to the power of n
         switch (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek) {
           case 0:
             daysoftheweek |= 0x01;
@@ -351,16 +355,9 @@ void handleGetRequest(String command, JSONVar& responseObj) {
         }
       }
       Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
-
       sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
-      
       Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
-
       sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt);
-      
-      // String(year()) + "-" + month() + "-" + day() + "T" + hour() + ":" + minute() + ":" + second();
-      // String sprinklerStateStr = String(digitalRead(relayPin));
-      // responseObj["status"] = timeStamp + "::" + sprinklerStateStr;
       responseObj["status"] = hiTimeStamp;
   } else {
       responseObj["error"] = "Invalid command";
@@ -514,6 +511,8 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     writeScheduleToEEPROM();
     Serial.println("processScheduleCommand->schedule written to EEPROM");
     PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
+    Serial.println("processScheduleCommand->ensure sprinkler off");
+    ScheduledSprinklerOff();
     Serial.println("processScheduleCommand->setting new alarms");
     setupAlarms();
   } else {
@@ -528,7 +527,7 @@ void ScheduledSprinklerOn() {
   digitalWrite(relayPin, HIGH);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
   Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
-  Alarm.timerOnce(duration, ScheduledSprinklerOff);
+  onAlarmID = Alarm.timerOnce(duration, ScheduledSprinklerOff);
 }
 
 void ScheduledSprinklerOff() {
@@ -537,7 +536,7 @@ void ScheduledSprinklerOff() {
   zones = zones - 1;
   if (zones > 0) {
     // delay(INTER_ZONE_DELAY);
-    Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
+    offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
   }
 }
  
@@ -776,6 +775,10 @@ void clearAlarms() {
   // next clear the get-set-time alarm
   Serial.println("clearAlarms->clearing get-set-time alarm ID: " + String(getSetCurrentTimeAlarmID));
   Alarm.free(getSetCurrentTimeAlarmID);
+  Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
+  Alarm.free(onAlarmID);
+  Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
+  Alarm.free(offAlarmID);
 }
 
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination) {
