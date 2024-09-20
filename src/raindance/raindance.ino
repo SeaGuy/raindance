@@ -1,47 +1,23 @@
-/*
-=========
-bitfields
-=========
+// Include necessary libraries
+#include <WiFi.h>
+#include <EEPROM.h>
+#include <Wire.h>
+#define dtNBR_ALARMS 16
+#include <TimeLib.h>
+#include <TimeAlarms.h>
+#include <ArduinoHttpClient.h>
+#include <Arduino_JSON.h>
 
-bitfield 0
-zones: number of zones (1-4)
-uint8_t 
+// EEPROM settings
+#define EEPROM_SIZE 512
 
-bitfield 1
-duration: duration in minutes (1-120)
-uint8_t 
-
-bitfield 2
-number of schedules (1-7)
-
-bitfields 3-9
-sprinkler time schedule bitfield
-bits    description  
----     -----------
-0-2     day of the week (0=Sunday, 6=Saturday)
-3-13    time of day in minutes (1=12:00AM; 1440=11:59PM; 121=2:01AM)
-
-
-==========
-EEPROM map
-==========
-
-address   type        description of value
--------   ----        --------------------
-0         uint8_t     zones: number of zones (1-4)
-1         uint8_t     duration: number of minutes per zone (1-120)
-2         uint8_t     number of sprinkler schedules (1-7)
-3         uint16_t    most significant byte (MSB) of first schedule entry
-4         uint16_t    least significant byte (LSB) of first schedule entry
-5         uint16_t    most significant byte (MSB) of second schedule entry
-6         uint16_t    least significant byte (LSB) of second schedule entry
-*/
-
+// Define EEPROM addresses
 #define EEPROM_ADDR_NUM_ZONES 0
 #define EEPROM_ADDR_NUM_MINUTES 1
 #define EEPROM_ADDR_NUM_SCHEDS 2
 #define EEPROM_ADDR_FIRST_SCHED 3
 
+// Define constants
 #define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
@@ -49,25 +25,13 @@ address   type        description of value
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
-
-#include <SPI.h>
-#include <WiFiNINA.h>
-//#include <WiFiServer.h>
-#include <EEPROM.h>
-#include <Wire.h>
-#include <Time.h>
-#define dtNBR_ALARMS 16
-#include <TimeAlarms.h>
-#include <TimeLib.h>
-#include <ArduinoHttpClient.h>
-#include <Arduino_JSON.h>
+// Global variables
 
 AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
 AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
 AlarmID_t getSetCurrentTimeAlarmID; 
 AlarmID_t onAlarmID;
 AlarmID_t offAlarmID;
-
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -99,25 +63,6 @@ SprinklerSchedule mySprinklerSchedule = {
   }
 };
 
-// WiFi settings
-const char ssid[] = "ARRIS-439E";
-const char password[] = "287860664144";
-
-int status = WL_IDLE_STATUS;
-WiFiServer server(80);
-
-const char timeServerAddress[] = "worldtimeapi.org";  // time server address
-const char timeServerAPI[] = "/api/timezone/America/New_York"; // API at time server
-int timePort = 80;
-WiFiClient wifiTimeClient;
-HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
-
-// Define the pin for the relay
-const int relayPin = 7;
-int relayState = 0;
-
-char hiTimeStamp[25];
-
 // Function prototypes
 void setup();
 void loop();
@@ -142,28 +87,72 @@ void GetSetCurrentTime();
 uint16_t readUint16FromEEPROM(int address);
 void writeUint32ToEEPROM(int address, uint32_t value);
 void eepromDump(int address);
-bool validateSchedule(SprinklerSchedule aSchedule);
-uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule aTimeSchedule);
+bool validateSchedule(SprinklerSchedule aSprinklerSchedule);
+uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule myTimeSchedule);
 void writeUint16ToEEPROM(int address, uint16_t value);
-bool timeScheduleValidated(uint8_t numScheds, TimeSchedule aTimeSchedule);
+bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]);
 void clearAlarms();
+void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination);
+void clearEEPROM();
+void setDefaultSchedule();
+timeDayOfWeek_t convertInt2DOW(int value);
 
+// WiFi settings
+const char ssid[] = "ARRIS-439E";
+const char password[] = "287860664144";
+
+WiFiServer server(80);
+
+const char timeServerAddress[] = "worldtimeapi.org";
+const char timeServerAPI[] = "/api/timezone/America/New_York";
+int timePort = 80;
+WiFiClient wifiTimeClient;
+HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
+
+// Define the pin for the relay (adjust the GPIO pin as needed for your hardware)
+const int relayPin = 7; // Ensure this pin is appropriate for the ESP32
+int relayState = 0;
+
+char hiTimeStamp[25];
 
 void setup() {
   setupSerial();
+  delay(3000);
+
   setupRelay();
+  delay(3000);
+
   connectToWiFi();
+  delay(3000);
+
+  // Initialize EEPROM
+  if (!EEPROM.begin(EEPROM_SIZE)) {
+    Serial.println("Failed to initialise EEPROM");
+    return;
+  }
+  delay(3000);
+
   server.begin();
+  delay(3000);
+
   GetSetCurrentTime();
+  delay(3000);
+
   PrintCurrentTime();
+  delay(3000);
+
   eepromDump(EEPROM_MAX_ADDRESS);
-  getScheduleFromEEPROM();
-  if (validateSchedule(mySprinklerSchedule)) {
-    Serial.println("setup->schedule is valid ...");
-  } else {
-      Serial.println("setup->schedule is not valid ...");
-  };
+  delay(3000);
+
+  //getScheduleFromEEPROM();
+  //if (validateSchedule(mySprinklerSchedule)) {
+    //Serial.println("setup->schedule is valid ...");
+  //} else {
+      //Serial.println("setup->schedule is not valid ...");
+  //};
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
+  delay(3000);
+
   setupAlarms();
 }
 
@@ -181,10 +170,11 @@ void loop() {
     Serial.println("relay is OFF");
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
+  delay(3000);
 }
 
 void setupSerial() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   delay(500);
   while (!Serial) {
     Serial.println("Setting up serial port");
@@ -200,19 +190,28 @@ void setupRelay() {
 }
 
 void connectToWiFi() {
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
-    status = WiFi.begin(ssid, password);
+  Serial.print("Connecting to SSID: ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    Serial.print(".");
     delay(1000);
+    attempts++;
   }
-  Serial.print("Connected to WiFi with address ");
-  Serial.println(WiFi.localIP());
-  // print the received signal strength:
-  long rssi = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println();
+    Serial.print("Connected to WiFi with address ");
+    Serial.println(WiFi.localIP());
+    // print the received signal strength:
+    long rssi = WiFi.RSSI();
+    Serial.print("signal strength (RSSI):");
+    Serial.print(rssi);
+    Serial.println(" dBm");
+  } else {
+    Serial.println();
+    Serial.println("Failed to connect to WiFi");
+  }
 }
 
 void getScheduleFromEEPROM() {
@@ -256,6 +255,7 @@ void writeScheduleToEEPROM() {
     Serial.println("writeScheduleToEEPROM->mySprinklerSchedule.myTimeSchedule[" + String(i) + "]->myBitField: " + String(myBitField));
     writeUint16ToEEPROM(EEPROM_ADDR_FIRST_SCHED + (i * 2), myBitField);
   }
+  EEPROM.commit(); // Commit changes to EEPROM
 }
 
 void setupAlarms() {
@@ -274,14 +274,15 @@ void setupAlarms() {
     Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
     Serial.println("setupAlarms->hour: " + String(hour));
     Serial.println("setupAlarms->minute: " + String(minute));
-    schedAlarmID = Alarm.alarmRepeat((mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek + 1), mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
+    timeDayOfWeek_t dowEnum = convertInt2DOW(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
+    schedAlarmID = Alarm.alarmRepeat(dowEnum, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
     Serial.println("setupAlarms->adding schedule alarm ID: " + String(schedAlarmID));
     schedAlarmIDArray[i] = schedAlarmID;
     }
     getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
     Serial.println("setupAlarms->get-set-time alarm created with ID: " + String(getSetCurrentTimeAlarmID));
   }
-  
+
 void handleClientRequests() {
   Serial.println("start handleClientRequests()");
   WiFiClient client = server.available();
@@ -403,70 +404,6 @@ String readJsonBody(WiFiClient& client) {
   return jsonBody;
 }
 
-/*
-bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
-  bool success = false;
-  SprinklerSchedule aSprinklerSchedule;
-  Serial.println("processScheduleCommand()");
-  JSONVar scheduleArray = parsedData["schedule"];
-  int numberOfZones = (int)parsedData["numberOfZones"];
-  int duration = (int)parsedData["duration"];
-  int numberOfTimeSchedules = scheduleArray.length();
-  Serial.println("processScheduleCommand->Received Schedule Parameters:");
-  Serial.println("\tprocessScheduleCommand->Number of zones: " + String(numberOfZones) + " zones");
-  Serial.println("\tprocessScheduleCommand->Duration per zone: " + String(duration) + " minutes");
-  Serial.println("\tprocessScheduleCommand->Number of time schedules: " + String(numberOfTimeSchedules) + " time schedules");
-  for (int i = 0; i < scheduleArray.length(); i++) {
-    int dayOfWeek = (uint32_t)scheduleArray[i]["dayOfWeek"];
-    String time = scheduleArray[i]["time"];
-    Serial.println("processScheduleCommand->Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", Time: " + time);
-  }
-  if ((numberOfZones >=1 && numberOfZones <= MAX_NUM_ZONES) && (duration >= 1 && duration <= MAX_DURATION_PER_ZONE) && (numberOfTimeSchedules >= 1 && numberOfTimeSchedules <= MAX_NUM_SCHEDS)) {
-    char timeString[6] = "";
-    aSprinklerSchedule.zones = numberOfZones;
-    aSprinklerSchedule.durationMinutes = duration;
-    aSprinklerSchedule.numberOfTimeSchedules = numberOfTimeSchedules;
-    for (int i = 0; i < scheduleArray.length(); i++) {
-      int dayOfWeek = (int)scheduleArray[i]["dayOfWeek"];
-      // double time = (double)scheduleArray[i]["time"];  // time since 1970
-      String timeValue = (const char*) scheduleArray[i]["time"];
-      Serial.println("processScheduleCommand->timeValue: " + timeValue);
-      strcpy(timeString, timeValue.c_str());  // time "HH:mm"
-      Serial.print("processScheduleCommand->timeString: ");
-      Serial.println(timeString);
-      String hourString = timeValue.substring(0, 2);
-      String minuteString = timeValue.substring(3, 5);
-      uint8_t day = (uint8_t)dayOfWeek;
-      uint8_t hr = (uint8_t)hourString.toInt();
-      uint8_t min = (uint8_t)minuteString.toInt();
-      if ( (day >= 0 && day <= 6) && (hr >= 0 && hr <= 23) && (min >=0 && min <=59) ) {
-        aSprinklerSchedule.myTimeSchedule[i].dayOfTheWeek = day;
-        aSprinklerSchedule.myTimeSchedule[i].hour = hr;
-        aSprinklerSchedule.myTimeSchedule[i].minute =  min;
-        Serial.println("processScheduleCommand->Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", timeString: " + timeString);
-        success = true;
-      } else {
-        Serial.println("processScheduleCommand->bad time schedule values");
-        success = false;
-        responseObj["status"] = "Schedule NOT updated";
-        return success;
-      }
-    }
-  }
-  responseObj["status"] = success ? "Schedule updated" : "Schedule NOT updated";
-  if (success) {
-    Serial.println("processScheduleCommand->schedule updated");
-    writeScheduleToEEPROM();
-    PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-    setupAlarms();
-  } else {
-      Serial.println("processScheduleCommand->schedule NOT updated");
-      PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-  }
-  return success;
-}
-*/
-
 bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
   bool success = false;
   SprinklerSchedule aSprinklerSchedule;
@@ -539,7 +476,7 @@ void ScheduledSprinklerOff() {
     offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
   }
 }
- 
+
 void PrintCurrentTime() {
   if (year() != 1970) {
     char timestamp[20]; // Array to hold the formatted timestamp
@@ -669,7 +606,7 @@ uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule myTimeSchedule) {
   Serial.println("createSprinklerTimeScheduleBitfield->myBitField->dayOfTheWeek: " + String(myBitField));
 
   minutes = (myTimeSchedule.hour * 60) + myTimeSchedule.minute;
-  myBitField = myBitField | minutes<<3;
+  myBitField = myBitField | (minutes<<3);
   Serial.println("createSprinklerTimeScheduleBitfield->myBitField->minutes: " + String(myBitField >> 3));
   Serial.println("createSprinklerTimeScheduleBitfield->myBitField: " + String(myBitField));
   return myBitField;
@@ -683,15 +620,13 @@ void eepromDump(int maxAddress) {
   }
 }
 
-void bogusSprinklerScheduleFunction() {
-}
-
 void clearEEPROM() {
   int maxEEPROMAddress = EEPROM_ADDR_FIRST_SCHED + (MAX_NUM_SCHEDS * 2);
   Serial.println("clearEEPROM->maxEEPROMAddress: " + String(maxEEPROMAddress));
   for (int addr = 0; addr <= maxEEPROMAddress; addr++) {
     EEPROM.write(addr, (uint8_t)0x00);
   }
+  EEPROM.commit();
 }
 
 void setDefaultSchedule() {
@@ -722,27 +657,7 @@ bool validateSchedule(SprinklerSchedule aSprinklerSchedule) {
           Serial.println("validateSchedule->problem with timeScheduleValidated()");
           isValid = false; 
         }
-  /*
-    if (problem) {
-      Serial.println("validateSchedule->dumping existing EEPROM");
-      eepromDump(EEPROM_MAX_ADDRESS);
-      Serial.println("validateSchedule->clearing existing EEPROM");
-      clearEEPROM();
-      Serial.println("validateSchedule->dumping cleared EEPROM");
-      eepromDump(EEPROM_MAX_ADDRESS);
-      Serial.println("validateSchedule->printing existing sprinkler schedule");
-      PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-      Serial.println("validateSchedule->setting default sprinkler schedule");
-      setDefaultSchedule();
-      Serial.println("validateSchedule->printing default sprinkler schedule");
-      PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-      Serial.println("validateSchedule->writing new schedule to EEPROM");
-      writeScheduleToEEPROM();
-      Serial.println("validateSchedule->dumping new EEPROM");
-      eepromDump(EEPROM_MAX_ADDRESS);
-    }
-    */
-    return isValid;
+  return isValid;
 }
 
 bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]) {
@@ -761,7 +676,7 @@ bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]) {
       }
     }
   } else {
-      Serial.println("timeScheduleVaidated->problem with number of shedules passed in): " + String(numScheds));
+      Serial.println("timeScheduleValidated->problem with number of schedules passed in: " + String(numScheds));
   }
   return valid;
 }
@@ -795,4 +710,34 @@ void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &des
     }
 }
 
-    
+timeDayOfWeek_t convertInt2DOW(int value) {
+  timeDayOfWeek_t result = dowSunday;
+  switch(value) {
+    case 0:
+      result = dowSunday;
+      break;
+    case 1:
+      result = dowMonday;
+      break;
+    case 2:
+      result = dowTuesday;
+      break;
+    case 3:
+      result = dowWednesday;
+      break;
+    case 4:
+      result = dowThursday;
+      break;
+    case 5:
+      result = dowFriday;
+      break;
+    case 6:
+      result = dowSaturday;
+      break;
+    case 7:
+    // error case
+      result = dowSunday;
+      break;
+  }
+  return result;
+}
