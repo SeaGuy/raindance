@@ -9,7 +9,7 @@
 #include <Arduino_JSON.h>
 
 // EEPROM settings
-#define EEPROM_SIZE 512
+#define EEPROM_SIZE 128
 
 // Define EEPROM addresses
 #define EEPROM_ADDR_NUM_ZONES 0
@@ -85,7 +85,6 @@ void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule);
 void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules);
 void GetSetCurrentTime();
 uint16_t readUint16FromEEPROM(int address);
-void writeUint32ToEEPROM(int address, uint32_t value);
 void eepromDump(int address);
 bool validateSchedule(SprinklerSchedule aSprinklerSchedule);
 uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule myTimeSchedule);
@@ -136,12 +135,16 @@ void setup() {
   delay(3000);
   eepromDump(EEPROM_MAX_ADDRESS);
   delay(3000);
-  //getScheduleFromEEPROM();
-  //if (validateSchedule(mySprinklerSchedule)) {
-    //Serial.println("setup->schedule is valid ...");
-  //} else {
-      //Serial.println("setup->schedule is not valid ...");
-  //};
+
+
+  getScheduleFromEEPROM();
+  if (validateSchedule(mySprinklerSchedule)) {
+    Serial.println("setup->schedule is valid ...");
+  } else {
+      Serial.println("setup->schedule is not valid ...");
+  };
+
+
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(3000);
   setupAlarms();
@@ -536,30 +539,14 @@ void GetSetCurrentTime() {
   }
 }
 
-void writeUint32ToEEPROM(int address, uint32_t value) {
-    // Write each byte of the uint32_t value into EEPROM
-    EEPROM.write(address, (value >> 24) & 0xFF);        // Most significant byte
-    EEPROM.write(address + 1, (value >> 16) & 0xFF);
-    EEPROM.write(address + 2, (value >> 8) & 0xFF);
-    EEPROM.write(address + 3, value & 0xFF);            // Least significant byte
-}
-
-uint32_t readUint32FromEEPROM(int address) {
-    // Read each byte from the EEPROM and reconstruct the uint32_t value
-    uint32_t value = 0;
-    value |= ((uint32_t)EEPROM.read(address)) << 24;
-    value |= ((uint32_t)EEPROM.read(address + 1)) << 16;
-    value |= ((uint32_t)EEPROM.read(address + 2)) << 8;
-    value |= (uint32_t)EEPROM.read(address + 3);
-    return value;
-}
-
 void writeUint16ToEEPROM(int address, uint16_t value) {
     // Write each byte of the uint16_t value into EEPROM
     EEPROM.write(address, (value >> 8) & 0xFF);     // Most significant byte
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address) + "]->value: " + String((value >> 8) & 0xFF));
     EEPROM.write(address + 1, value & 0xFF);            // Least significant byte
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address + 1) + "]->value: " + String(value & 0xFF));
+    EEPROM.commit(); // Commit changes to EEPROM
+
 }
 
 uint16_t readUint16FromEEPROM(int address) {
