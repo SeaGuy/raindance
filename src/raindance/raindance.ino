@@ -118,32 +118,24 @@ char hiTimeStamp[25];
 void setup() {
   setupSerial();
   delay(3000);
-
   setupRelay();
   delay(3000);
-
   connectToWiFi();
   delay(3000);
-
   // Initialize EEPROM
   if (!EEPROM.begin(EEPROM_SIZE)) {
     Serial.println("Failed to initialise EEPROM");
     return;
   }
   delay(3000);
-
   server.begin();
   delay(3000);
-
   GetSetCurrentTime();
   delay(3000);
-
   PrintCurrentTime();
   delay(3000);
-
   eepromDump(EEPROM_MAX_ADDRESS);
   delay(3000);
-
   //getScheduleFromEEPROM();
   //if (validateSchedule(mySprinklerSchedule)) {
     //Serial.println("setup->schedule is valid ...");
@@ -152,7 +144,6 @@ void setup() {
   //};
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(3000);
-
   setupAlarms();
 }
 
