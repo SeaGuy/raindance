@@ -32,6 +32,7 @@ AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
 AlarmID_t getSetCurrentTimeAlarmID; 
 AlarmID_t onAlarmID;
 AlarmID_t offAlarmID;
+AlarmID_t retryGetTimeAlarmID;
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -273,7 +274,7 @@ void setupAlarms() {
     Serial.println("setupAlarms->adding schedule alarm ID: " + String(schedAlarmID));
     schedAlarmIDArray[i] = schedAlarmID;
     }
-    getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime);
+    getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
     Serial.println("setupAlarms->get-set-time alarm created with ID: " + String(getSetCurrentTimeAlarmID));
   }
 
@@ -518,7 +519,7 @@ void GetSetCurrentTime() {
   httpTimeClient.get(timeServerAPI);
   int statusCode = httpTimeClient.responseStatusCode();
   String response = httpTimeClient.responseBody();
-
+  Alarm.free(retryGetTimeAlarmID);
   if (statusCode == 200) {
     JSONVar myObject = JSON.parse(response);
     if (JSON.typeof(myObject) == "undefined") {
@@ -535,7 +536,7 @@ void GetSetCurrentTime() {
     setTime(hr, min, sec, day, month, year);
   } else {
     Serial.println("Failed to get time; trying again in 60 seconds");
-    Alarm.timerOnce(60, GetSetCurrentTime);
+    retryGetTimeAlarmID = Alarm.timerOnce(60, GetSetCurrentTime);   // call once after 60 mseconds
   }
 }
 
@@ -666,12 +667,14 @@ void clearAlarms() {
     Alarm.free(schedAlarmIDArray[i]);
   }
   // next clear the get-set-time alarm
-  Serial.println("clearAlarms->clearing get-set-time alarm ID: " + String(getSetCurrentTimeAlarmID));
+  Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
   Alarm.free(getSetCurrentTimeAlarmID);
   Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
   Alarm.free(onAlarmID);
   Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
   Alarm.free(offAlarmID);
+  Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
+  Alarm.free(retryGetTimeAlarmID);
 }
 
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination) {
