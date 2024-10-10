@@ -1,3 +1,42 @@
+/*
+=========
+bitfields
+=========
+
+bitfield 0
+zones: number of zones (1-4)
+uint8_t 
+
+bitfield 1
+duration: duration in minutes (1-120)
+uint8_t 
+
+bitfield 2
+number of schedules (1-7)
+
+bitfields 3-9
+sprinkler time schedule bitfield
+bits    description  
+---     -----------
+0-2     day of the week (0=Sunday, 6=Saturday)
+3-13    time of day in minutes (1=12:00AM; 1440=11:59PM; 121=2:01AM)
+
+
+==========
+EEPROM map
+==========
+
+address   type        description of value
+-------   ----        --------------------
+0         uint8_t     zones: number of zones (1-4)
+1         uint8_t     duration: number of minutes per zone (1-120)
+2         uint8_t     number of sprinkler schedules (1-7)
+3         uint16_t    most significant byte (MSB) of first schedule entry
+4         uint16_t    least significant byte (LSB) of first schedule entry
+5         uint16_t    most significant byte (MSB) of second schedule entry
+6         uint16_t    least significant byte (LSB) of second schedule entry
+*/
+
 // Include necessary libraries
 #include <WiFi.h>
 #include <EEPROM.h>
