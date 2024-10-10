@@ -45,7 +45,6 @@ struct ContentView: View {
             HStack {
                 Button("ON") {
                     sendCommand(command: "ONN", httpMethod: "GET", params: [:])
-                    // sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
                 .background(Color.green)
@@ -55,7 +54,6 @@ struct ContentView: View {
                 
                 Button("OFF") {
                     sendCommand(command: "OFF", httpMethod: "GET", params: [:])
-                    // sendCommand(command: "HI!", httpMethod: "GET", params: [:])
                 }
                 .padding()
                 .background(Color.gray)
@@ -197,16 +195,13 @@ struct ContentView: View {
                 print("Error occurred: \(error)")
                 return
             }
-            
             if let httpResponse = response as? HTTPURLResponse {
                 print("HTTP Status Code: \(httpResponse.statusCode)")
                 print("HTTP Method: \(request.httpMethod ?? "Unknown")")
-                
                 if let mimeType = httpResponse.mimeType {
                     print("MIME Type: \(mimeType)")
                 }
             }
-            
             if let data = data, let responseString = String(data: data, encoding: .utf8) {
                 print("Response Data: \(responseString)")
                 handleResponse(responseString)
@@ -223,7 +218,6 @@ struct ContentView: View {
            let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let status = jsonResponse["status"] as? String {
             let year = String(status.prefix(4))
-            
             let bitfieldValue = status.dropFirst(21) // Get the bitfield value as a substring
             print("bitfieldValue: \(bitfieldValue)")
             if let uint16Value = UInt16(bitfieldValue) {
@@ -252,16 +246,10 @@ struct ContentView: View {
                     isSprinklerOn = (onoffstatus == 1)
 
                 }
-                
-                
                 //}
             } else {
                 print("Conversion failed. The string does not represent a valid UInt16 value.")
             }
-                    
-            
-            
-           
             if year == "1970" {
                 // If the year is "1970", call the functions to send the current date and time
                 sendDateTimeToArduino { response in
