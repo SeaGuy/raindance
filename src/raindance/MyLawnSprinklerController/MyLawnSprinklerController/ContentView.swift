@@ -218,9 +218,15 @@ struct ContentView: View {
            let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let status = jsonResponse["status"] as? String {
             let year = String(status.prefix(4))
-            let bitfieldValue = status.dropFirst(21) // Get the bitfield value as a substring
-            print("bitfieldValue: \(bitfieldValue)")
-            if let uint16Value = UInt16(bitfieldValue) {
+            // let bitfieldValue = status.dropFirst(21) // Get the bitfield value as a substring
+
+            let startIndex = status.index(status.startIndex, offsetBy: 21)
+            let endIndex = status.index(startIndex, offsetBy: 5)
+            let onoffBitfieldValue = status[startIndex..<endIndex]
+            
+
+            print("onoffBitfieldValue: \(onoffBitfieldValue)")
+            if let uint16Value = UInt16(onoffBitfieldValue) {
                 print("uint16Value \(uint16Value)")
                 var onoffstatus: Int = Int(uint16Value & 0x80)
                 let bitfield = Int(uint16Value & 0x7f)

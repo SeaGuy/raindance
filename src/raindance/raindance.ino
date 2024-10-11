@@ -351,52 +351,56 @@ void handleClientRequests() {
 }
 
 void handleGetRequest(String command, JSONVar& responseObj) {
-  Serial.println("Processing GET request with command: " + command);
+  Serial.println("handleGetRequest->Processing GET request with command: " + command);
+  uint16_t arduinoCommandError = 0;
   if (command == "ONN") {
     digitalWrite(relayPin, HIGH);
-    responseObj["status"] = "Sprinkler is ON";
+    // responseObj["status"] = "Sprinkler is ON";
   } else if (command == "OFF") {
       digitalWrite(relayPin, LOW);
-      responseObj["status"] = "Sprinkler is OFF";
+      // responseObj["status"] = "Sprinkler is OFF";
   } else if (command == "HI!") {
-      int sprinklerStateInt = digitalRead(relayPin);
-      int daysoftheweek = 0x00;
-      for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
-        // replace with 2 to the power of n
-        switch (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek) {
-          case 0:
-            daysoftheweek |= 0x01;
-            break;
-          case 1:
-            daysoftheweek |= 0x02;
-            break;
-          case 2:
-            daysoftheweek |= 0x04;
-            break;
-          case 3:
-            daysoftheweek |= 0x08;
-            break;
-          case 4:
-            daysoftheweek |= 0x10;
-            break;
-          case 5:
-            daysoftheweek |= 0x20;
-            break;
-          case 6:
-            daysoftheweek |= 0x40;
-            break;
-          default:
-            break;
-        }
+      // do nothing but prepare a heartbeat response
+  } else {
+      // responseObj["error"] = "Invalid command";
+      arduinoCommandError = 1;
+  }
+    int sprinklerStateInt = digitalRead(relayPin);
+    Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
+    int daysoftheweek = 0x00;
+    for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
+      // replace with 2 to the power of n
+      switch (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek) {
+        case 0:
+          daysoftheweek |= 0x01;
+          break;
+        case 1:
+          daysoftheweek |= 0x02;
+          break;
+        case 2:
+          daysoftheweek |= 0x04;
+          break;
+        case 3:
+          daysoftheweek |= 0x08;
+          break;
+        case 4:
+          daysoftheweek |= 0x10;
+          break;
+        case 5:
+          daysoftheweek |= 0x20;
+          break;
+        case 6:
+          daysoftheweek |= 0x40;
+          break;
+        default:
+          break;
       }
       Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
       sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
+    }
       Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
-      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt);
+      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%05d::%05d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, arduinoCommandError);
       responseObj["status"] = hiTimeStamp;
-  } else {
-      responseObj["error"] = "Invalid command";
-  }
 }
 
 void handlePostRequest(WiFiClient& client, JSONVar& responseObj) {
