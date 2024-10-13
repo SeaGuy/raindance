@@ -16,6 +16,13 @@ number of schedules (1-7)
 
 bitfields 3-9
 sprinkler time schedule bitfield
+uint16_t sprinklerTimeScheduleBitfield
+max value 13 bits = 8191D = 0x1fff
+max application value: 10110100000 (1440) = 11:59 PM +  111 (6) = Saturday => 10110100000111 (11527D = 0x2d07)
+So, examples:
+  Wednesdays at 6:00 AM =  360 + 3 => 101101000 + 011 =>  101101000011 (2883 = 0x0b43)
+  Wednesdays at 6:30 AM =  390 + 3 => 110000110 + 011 =>  110000110011 (3123 = 0x0c33)
+
 bits    description  
 ---     -----------
 0-2     day of the week (0=Sunday, 6=Saturday)
@@ -65,13 +72,13 @@ address   type        description of value
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
 // Global variables
-
 AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
 AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
 AlarmID_t getSetCurrentTimeAlarmID; 
 AlarmID_t onAlarmID;
 AlarmID_t offAlarmID;
 AlarmID_t retryGetTimeAlarmID;
+AlarmID_t blueLEDpulsingAlarmID;
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -148,9 +155,13 @@ int timePort = 80;
 WiFiClient wifiTimeClient;
 HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
 
-// Define the pin for the relay (adjust the GPIO pin as needed for your hardware)
-const int relayPin = 7; // Ensure this pin is appropriate for the ESP32
+// pin assignments
+const int relayPin = 7;   // pin for the relay (D7)
 int relayState = 0;
+
+const int ___red_led_pin = 14;  // pin for red LED problem patterns
+const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
+const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water flowing
 
 char hiTimeStamp[25];
 
@@ -188,6 +199,16 @@ void setup() {
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(3000);
   setupAlarms();
+
+  // set the LED pins as  outputs
+  pinMode(__blue_led_pin, OUTPUT);
+  pinMode(___red_led_pin, OUTPUT);
+  pinMode(_green_led_pin, OUTPUT);
+
+  // pulse each LED 3 times to verify working on startup
+  pulseLED(__blue_led_pin, 3, 256);
+  pulseLED(___red_led_pin, 3, 256);
+  pulseLED(_green_led_pin, 3, 256);
 }
 
 void loop() {
@@ -204,7 +225,7 @@ void loop() {
     Serial.println("relay is OFF");
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-  delay(3000);
+  delay(128);
 }
 
 void setupSerial() {
@@ -352,12 +373,16 @@ void handleClientRequests() {
 
 void handleGetRequest(String command, JSONVar& responseObj) {
   Serial.println("handleGetRequest->Processing GET request with command: " + command);
-  uint16_t arduinoCommandError = 0;
+  commandRcvdLED_ON();
+  uint8_t arduinoCommandError = 0;
   if (command == "ONN") {
     digitalWrite(relayPin, HIGH);
+    blueLEDpulsingAlarmID = Alarm.timerRepeat(1, blueLED_ON);
     // responseObj["status"] = "Sprinkler is ON";
   } else if (command == "OFF") {
       digitalWrite(relayPin, LOW);
+      Serial.println("handleGetRequest->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
+      Alarm.free(blueLEDpulsingAlarmID);
       // responseObj["status"] = "Sprinkler is OFF";
   } else if (command == "HI!") {
       // do nothing but prepare a heartbeat response
@@ -365,9 +390,9 @@ void handleGetRequest(String command, JSONVar& responseObj) {
       // responseObj["error"] = "Invalid command";
       arduinoCommandError = 1;
   }
-    int sprinklerStateInt = digitalRead(relayPin);
+    uint8_t sprinklerStateInt = digitalRead(relayPin);
     Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
-    int daysoftheweek = 0x00;
+    uint8_t daysoftheweek = 0x00;
     for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
       // replace with 2 to the power of n
       switch (mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek) {
@@ -395,11 +420,11 @@ void handleGetRequest(String command, JSONVar& responseObj) {
         default:
           break;
       }
-      Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
-      sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
+      Serial.println("handleGetRequest->daysoftheweek: " + String(daysoftheweek));
     }
+      sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
       Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
-      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%05d::%05d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, arduinoCommandError);
+      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d::%01d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, arduinoCommandError);
       responseObj["status"] = hiTimeStamp;
 }
 
@@ -500,6 +525,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
 void ScheduledSprinklerOn() {
   int duration = 0;
   digitalWrite(relayPin, HIGH);
+  blueLEDpulsingAlarmID = Alarm.timerRepeat(1, blueLED_ON);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
   Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
   onAlarmID = Alarm.timerOnce(duration, ScheduledSprinklerOff);
@@ -508,11 +534,14 @@ void ScheduledSprinklerOn() {
 void ScheduledSprinklerOff() {
   Serial.println("ScheduledSprinklerOff->zones: " + String(zones));
   digitalWrite(relayPin, LOW);
+  onboardLED_OFF(__blue_led_pin);
   zones = zones - 1;
   if (zones > 0) {
     // delay(INTER_ZONE_DELAY);
     offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
   }
+  Serial.println("ScheduledSprinklerOff->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
+  Alarm.free(blueLEDpulsingAlarmID);
 }
 
 void PrintCurrentTime() {
@@ -605,11 +634,12 @@ uint16_t readUint16FromEEPROM(int address) {
 /*
 bitfields 3-9
 sprinkler time schedule bitfield
+uint16_t sprinklerTimeScheduleBitfield
+
 bits    description  
 ---     -----------
 0-2     day of the week (0=Sunday, 6=Saturday)
 3-13    time of day in minutes (1=12:00AM; 1440=11:59PM; 121=2:01AM)
-
 struct TimeSchedule {
     uint8_t dayOfTheWeek;  // 0-6 for Sunday-Saturday
     uint8_t hour;          // 0-23 for hours of the day
@@ -718,6 +748,9 @@ void clearAlarms() {
   Alarm.free(offAlarmID);
   Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
   Alarm.free(retryGetTimeAlarmID);
+  Serial.println("clearAlarms->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
+  Alarm.free(blueLEDpulsingAlarmID);
+  
 }
 
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination) {
@@ -764,4 +797,55 @@ timeDayOfWeek_t convertInt2DOW(int value) {
       break;
   }
   return result;
+}
+
+void pulseLED(int theLED, int numberPulses, int duration) {
+  char theArgs[64];
+  digitalWrite(theLED, HIGH);
+  sprintf(theArgs, "theLED: %02d;  numberPulses: %02d;  duration(ms): %04d", theLED, numberPulses, duration);
+  Serial.print("pulseLED->theArgs: ");
+  Serial.println(theArgs);
+  for (int i = 0; i < numberPulses; i++) {
+    digitalWrite(theLED, LOW);
+    delay(duration);
+    digitalWrite(theLED, HIGH);
+    delay(duration);
+  }
+}
+
+void commandRcvdLED_ON() {
+  digitalWrite(_green_led_pin, HIGH);   // ensure off
+  Serial.print("blueLED_ON()");
+  digitalWrite(_green_led_pin, LOW);
+  delay(1024);
+  digitalWrite(_green_led_pin, HIGH);
+}
+
+void blueLED_ON() {
+  digitalWrite(__blue_led_pin, HIGH);   // ensure off
+  Serial.print("blueLED_ON()");
+  digitalWrite(__blue_led_pin, LOW);
+  delay(800);
+  digitalWrite(__blue_led_pin, HIGH);
+}
+
+void onboardLED_ON(int theLED, bool pulsed, int duration) {
+  char theArgs[64];
+  digitalWrite(theLED, HIGH);
+  sprintf(theArgs, "theLED: %02d;  pulsed: %01d", theLED, pulsed);
+  Serial.print("onboardLED_ON->theArgs: ");
+  Serial.println(theArgs);
+//    
+    digitalWrite(theLED, LOW);
+    delay(duration);
+    digitalWrite(theLED, HIGH);
+    delay(duration);
+}
+
+void onboardLED_OFF(int theLED) {
+  char theArgs[64];
+  digitalWrite(theLED, HIGH);
+  sprintf(theArgs, "theLED: %02d", theLED);
+  Serial.print("onboardLED_OFF->theArgs: ");
+  Serial.println(theArgs);
 }

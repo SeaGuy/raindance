@@ -1,0 +1,141 @@
+# Sprinkler Control Application
+
+This project consists of two main components: an **iOS application** developed in SwiftUI and an **Arduino-based system**. The iOS app monitors and controls a sprinkler system by sending HTTP commands to an Arduino Nano ESP32, which in turn controls a relay that activates a water pump for sprinkling.
+
+## Table of Contents
+- [Sprinkler Control Application](#sprinkler-control-application)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [iOS Application](#ios-application)
+    - [Features](#features)
+    - [Requirements](#requirements)
+    - [Installation](#installation)
+  - [Arduino Component](#arduino-component)
+    - [Features](#features-1)
+    - [Hardware Setup](#hardware-setup)
+    - [Arduino Sketch](#arduino-sketch)
+  - [HTTP Commands](#http-commands)
+    - [Command List](#command-list)
+    - [Example Requests](#example-requests)
+      - [Turn Sprinkler ON](#turn-sprinkler-on)
+      - [Turn Sprinkler OFF](#turn-sprinkler-off)
+      - [Set Schedule](#set-schedule)
+  - [Usage](#usage)
+  - [License](#license)
+
+## Overview
+
+This sprinkler control system enables you to manage and automate watering schedules for your lawn. The system consists of an iOS app that acts as the user interface and sends control commands to an Arduino Nano ESP32 via HTTP. The Arduino manages the hardware by controlling a relay that activates a water pump for sprinkling.
+
+## iOS Application
+
+### Features
+- Monitor the status of the sprinkler system.
+- Manually control the sprinklers (turn on/off).
+- Set and modify watering schedules.
+- Adjust the system IP address dynamically for communication.
+
+### Requirements
+- iOS 15.0 or later.
+- Developed in SwiftUI.
+- Network access to communicate with the Arduino device.
+
+### Installation
+1. Download the source code or clone the repository:
+   \``bash
+   git clone https://github.com/yourusername/sprinkler-app.git
+   \``
+2. Open the project in Xcode.
+3. Build and run the application on your iOS device.
+
+## Arduino Component
+
+### Features
+- Receives and processes HTTP commands from the iOS app.
+- Controls a relay to activate or deactivate the water pump.
+- Manages schedules and timing of watering.
+- Monitors and sends back system status updates to the app.
+
+### Hardware Setup
+- **Arduino Nano ESP32**: The core microcontroller for the project.
+- **Relay Module**: Controls the water pump.
+- **Water Pump**: Performs the actual sprinkling.
+- **Power Supply**: Provides power to the relay and pump.
+- **Wiring**: Connect the relay to the appropriate GPIO pins on the Arduino Nano ESP32. The relay should control the power to the water pump.
+
+### Arduino Sketch
+1. Download or copy the Arduino sketch from the `/arduino` folder.
+2. Install the necessary libraries (`WiFiNINA`, `ArduinoHttpClient`, etc.).
+3. Upload the sketch to the Arduino Nano ESP32 via the Arduino IDE.
+
+   \``bash
+   git clone https://github.com/yourusername/sprinkler-firmware.git
+   \``
+
+## HTTP Commands
+
+### Command List
+The iOS app sends HTTP POST commands to control the Arduino Nano ESP32. The following commands are supported:
+
+- **Turn Sprinkler ON:**
+  - `POST /sprinkler/on`
+  - Activates the relay to start the water pump.
+  
+- **Turn Sprinkler OFF:**
+  - `POST /sprinkler/off`
+  - Deactivates the relay to stop the water pump.
+  
+- **Set Schedule:**
+  - `POST /schedule`
+  - Sets or updates a watering schedule.
+
+- **Get Status:**
+  - `GET /status`
+  - Returns the current system status, including whether the sprinkler is on or off.
+
+### Example Requests
+
+#### Turn Sprinkler ON
+\``bash
+POST /sprinkler/on
+Host: 192.168.1.100
+Content-Type: application/json
+
+{
+  "command": "ON"
+}
+\``
+
+#### Turn Sprinkler OFF
+\``bash
+POST /sprinkler/off
+Host: 192.168.1.100
+Content-Type: application/json
+
+{
+  "command": "OFF"
+}
+\``
+
+#### Set Schedule
+\``bash
+POST /schedule
+Host: 192.168.1.100
+Content-Type: application/json
+
+{
+  "startTime": "06:00",
+  "duration": 15
+}
+\``
+
+## Usage
+1. Ensure the Arduino Nano ESP32 is connected to the same network as the iOS app.
+2. Use the iOS app to control the sprinkler system:
+   - Tap the **Sprinkler ON** button to activate the water pump.
+   - Tap the **Sprinkler OFF** button to deactivate the water pump.
+   - Set a schedule by specifying the start time and duration.
+3. The app will communicate with the Arduino to send commands and display the status of the sprinkler system.
+
+## License
+This project is licensed under the MIT License. See the `LICENSE` file for details.

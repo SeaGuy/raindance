@@ -221,7 +221,7 @@ struct ContentView: View {
             // let bitfieldValue = status.dropFirst(21) // Get the bitfield value as a substring
 
             let startIndex = status.index(status.startIndex, offsetBy: 21)
-            let endIndex = status.index(startIndex, offsetBy: 5)
+            let endIndex = status.index(startIndex, offsetBy: 3)
             let onoffBitfieldValue = status[startIndex..<endIndex]
             
 
