@@ -83,8 +83,6 @@ AlarmID_t blueLEDpulsingAlarmID;
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
 
-int zones = 1;
-
 // Step 1: Define the structure
 struct TimeSchedule {
     uint8_t dayOfTheWeek;  // 0-6 for Sunday-Saturday
@@ -109,6 +107,8 @@ SprinklerSchedule mySprinklerSchedule = {
     { 6, 6, 0 }   // Saturday at 6:00 AM
   }
 };
+
+int zones = mySprinklerSchedule.zones; // initialize to default number of zones
 
 // Function prototypes
 void setup();
@@ -539,6 +539,8 @@ void ScheduledSprinklerOff() {
   if (zones > 0) {
     // delay(INTER_ZONE_DELAY);
     offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
+  } else {
+    zones = (int)(mySprinklerSchedule.zones);
   }
   Serial.println("ScheduledSprinklerOff->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
   Alarm.free(blueLEDpulsingAlarmID);
