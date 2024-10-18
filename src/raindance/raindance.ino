@@ -561,6 +561,7 @@ void PrintCurrentTime() {
     Serial.println(timestamp);
   } else {
     Serial.println("Time is NOT Set!");
+    GetSetCurrentTime();
   }
 }
 
@@ -590,6 +591,9 @@ void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules) {
 
 void GetSetCurrentTime() {
   Serial.println("Getting and setting current time");
+
+  httpTimeClient.setTimeout(3000);
+
   httpTimeClient.get(timeServerAPI);
   int statusCode = httpTimeClient.responseStatusCode();
   String response = httpTimeClient.responseBody();
