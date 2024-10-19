@@ -149,8 +149,16 @@ const char password[] = "287860664144";
 
 WiFiServer server(80);
 
-const char timeServerAddress[] = "worldtimeapi.org";
-const char timeServerAPI[] = "/api/timezone/America/New_York";
+// const char timeServerAddress[] = "159.89.169.46"; // IP for worldtimeapi.org
+// const char timeServerAddress[] = "http://worldtimeapi.org";
+// const char timeServerAPI[] = "/api/timezone/America/New_York";
+
+const char timeServerAddress[] = "worldclockapi.com";
+const char timeServerAPI[] = "/api/json/est/now";
+
+//const char timeServerAddress[] = "timeapi.io";
+//const char timeServerAPI[] = "/api/Time/current/zone?timeZone=America/New_York";
+
 int timePort = 80;
 WiFiClient wifiTimeClient;
 HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
@@ -164,6 +172,7 @@ const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
 const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water flowing
 
 char hiTimeStamp[25];
+bool isTimeSet = false;
 
 void setup() {
   setupSerial();
@@ -172,6 +181,8 @@ void setup() {
   delay(3000);
   connectToWiFi();
   delay(3000);
+  // Set timeout for HTTP requests
+  wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
   // Initialize EEPROM
   if (!EEPROM.begin(EEPROM_SIZE)) {
     Serial.println("Failed to initialise EEPROM");
@@ -225,7 +236,8 @@ void loop() {
     Serial.println("relay is OFF");
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-  delay(128);
+  checkCLI();
+  delay(2048);
 }
 
 void setupSerial() {
@@ -561,7 +573,6 @@ void PrintCurrentTime() {
     Serial.println(timestamp);
   } else {
     Serial.println("Time is NOT Set!");
-    GetSetCurrentTime();
   }
 }
 
@@ -591,20 +602,36 @@ void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules) {
 
 void GetSetCurrentTime() {
   Serial.println("Getting and setting current time");
-
-  httpTimeClient.setTimeout(3000);
-
+  /*
   httpTimeClient.get(timeServerAPI);
   int statusCode = httpTimeClient.responseStatusCode();
   String response = httpTimeClient.responseBody();
-  Alarm.free(retryGetTimeAlarmID);
+  */
+  int statusCode = 0;
+  int retries = 5;
+  String response, datetime;
+  while (retries > 0 && statusCode != 200) {
+    Serial.println("Trying to get date and time ...");
+    httpTimeClient.get(timeServerAPI);
+    statusCode = httpTimeClient.responseStatusCode();
+    response = httpTimeClient.responseBody();
+    Serial.println("GetSetCurrentTime->statusCode: " + String(statusCode));
+    Serial.println("GetSetCurrentTime->response: " + response);
+    retries--;
+    delay(1024);  // Delay 1 second between retries
+  }
   if (statusCode == 200) {
     JSONVar myObject = JSON.parse(response);
     if (JSON.typeof(myObject) == "undefined") {
       Serial.println("Parsing input failed!");
       return;
     }
-    String datetime = (const char*) myObject["datetime"];
+    if (strcmp("worldtimeapi.org", timeServerAddress) == 0) {
+      datetime = (const char*) myObject["datetime"];
+    }
+    if (strcmp("worldclockapi.com", timeServerAddress) == 0) {
+      datetime = (const char*) myObject["currentDateTime"];
+    }
     int hr = (datetime.substring(11,13)).toInt();
     int min = (datetime.substring(14,16)).toInt();
     int sec = (datetime.substring(17,19)).toInt();
@@ -613,8 +640,9 @@ void GetSetCurrentTime() {
     int year = (datetime.substring(0,4)).toInt();
     setTime(hr, min, sec, day, month, year);
   } else {
-    Serial.println("Failed to get time; trying again in 60 seconds");
-    retryGetTimeAlarmID = Alarm.timerOnce(60, GetSetCurrentTime);   // call once after 60 mseconds
+    Serial.println("Failed to get time; trying again in 3 minutes");
+    Alarm.free(retryGetTimeAlarmID);
+    retryGetTimeAlarmID = Alarm.timerOnce(180, GetSetCurrentTime);   // call once after 180 mseconds
   }
 }
 
@@ -855,3 +883,70 @@ void onboardLED_OFF(int theLED) {
   Serial.print("onboardLED_OFF->theArgs: ");
   Serial.println(theArgs);
 }
+
+
+void checkCLI() {
+  if (Serial.available() > 0) {
+    String input = Serial.readStringUntil('\n');
+
+    // Ensure the input has at least one character for the command number
+    if (input.length() > 0) {
+      // Extract the command number (first character) and convert to integer
+      int commandNumber = input.substring(0, 1).toInt();
+      // Extract the command body (second and subsequent characters)
+      String commandBody = input.substring(1);
+
+      switch (commandNumber) {
+        case 0:
+          // Expect the command body to be in the format YYYY-MM-DDTHH:MM:SS
+          if (commandBody.length() == 19 && commandBody.charAt(10) == 'T') {
+            int year = commandBody.substring(0, 4).toInt();
+            int month = commandBody.substring(5, 7).toInt();
+            int day = commandBody.substring(8, 10).toInt();
+            int hour = commandBody.substring(11, 13).toInt();
+            int minute = commandBody.substring(14, 16).toInt();
+            int second = commandBody.substring(17, 19).toInt();
+            
+            // Set the time using the parsed values
+            setTime(hour, minute, second, day, month, year);
+            Serial.println("Time set successfully.");
+            PrintCurrentTime();
+          } else {
+            Serial.println("Invalid format. Use YYYY-MM-DDTHH:MM:SS.");
+          }
+          break;
+        
+        // Add more cases for other command numbers if needed
+
+        default:
+          Serial.println("Unknown command number.");
+          break;
+      }
+    }
+  }
+}
+
+// Function to manually read headers and extract the "Location" header
+String readLocationHeader(HttpClient& client) {
+  String header;
+  String location = "";
+  
+  while (client.available()) {
+    header = client.readStringUntil('\n');
+    header.trim();  // Remove any extra spaces and newlines
+
+    // If the line is empty, headers are finished
+    if (header.length() == 0) {
+      break;
+    }
+
+    // Check if this is the Location header
+    if (header.startsWith("Location: ")) {
+      location = header.substring(10);  // Extract the URL from the "Location: " line
+      break;
+    }
+  }
+
+  return location;
+}
+
