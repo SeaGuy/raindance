@@ -556,6 +556,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
 void ScheduledSprinklerOn() {
   int duration = 0;
   digitalWrite(relayPin, HIGH);
+  Alarm.free(blueLEDpulsingAlarmID);
   blueLEDpulsingAlarmID = Alarm.timerRepeat(1, blueLED_ON);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
   Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
@@ -568,7 +569,6 @@ void ScheduledSprinklerOff() {
   onboardLED_OFF(__blue_led_pin);
   zones = zones - 1;
   if (zones > 0) {
-    // delay(INTER_ZONE_DELAY);
     offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
   } else {
     zones = (int)(mySprinklerSchedule.zones);
@@ -883,7 +883,7 @@ void pulseLED(int theLED, int numberPulses, int duration) {
 
 void commandRcvdLED_ON() {
   digitalWrite(_green_led_pin, HIGH);   // ensure off
-  Serial.print("blueLED_ON()");
+  Serial.println("commandRcvdLED_ON()");
   digitalWrite(_green_led_pin, LOW);
   delay(1024);
   digitalWrite(_green_led_pin, HIGH);
@@ -891,9 +891,9 @@ void commandRcvdLED_ON() {
 
 void blueLED_ON() {
   digitalWrite(__blue_led_pin, HIGH);   // ensure off
-  Serial.print("blueLED_ON()");
+  Serial.println("blueLED_ON()");
   digitalWrite(__blue_led_pin, LOW);
-  delay(800);
+  delay(1024);
   digitalWrite(__blue_led_pin, HIGH);
 }
 
