@@ -141,6 +141,9 @@ void clearAlarms();
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination);
 void clearEEPROM();
 void setDefaultSchedule();
+void parse_worldtimeapi(JSONVar myObject);
+void parse_worldclockapi(JSONVar myObject);
+void parse_timeapi(JSONVar myObject);
 timeDayOfWeek_t convertInt2DOW(int value);
 
 // WiFi settings
@@ -148,6 +151,22 @@ const char ssid[] = "ARRIS-439E";
 const char password[] = "287860664144";
 
 WiFiServer server(80);
+
+struct TimeServerData {
+  const char* url;        // time server URL
+  const int port;         // port number
+  const char* api;        // time server API
+  void (*function)(JSONVar);     // function pointer to handler for that specific time server
+};
+
+TimeServerData myTimeServerArray[] = {
+  { "worldtimeapi.org.com", 80, "/api/timezone/America/New_York", parse_worldtimeapi },
+  { "worldclockapi.com", 80, "/api/json/est/now", parse_worldclockapi },
+  { "timeapi.io", 80, "/api/Time/current/zone?timeZone=America/New_York", parse_timeapi }
+};
+
+const int NUMBER_TIME_SERVERS = sizeof(myTimeServerArray) / sizeof(myTimeServerArray[0]);
+
 
 // const char timeServerAddress[] = "159.89.169.46"; // IP for worldtimeapi.org
 // const char timeServerAddress[] = "http://worldtimeapi.org";
@@ -161,7 +180,7 @@ const char timeServerAPI[] = "/api/json/est/now";
 
 int timePort = 80;
 WiFiClient wifiTimeClient;
-HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
+// HttpClient httpTimeClient = HttpClient(wifiTimeClient, timeServerAddress, timePort);
 
 // pin assignments
 const int relayPin = 7;   // pin for the relay (D7)
@@ -608,11 +627,23 @@ void GetSetCurrentTime() {
   String response = httpTimeClient.responseBody();
   */
   int statusCode = 0;
-  int retries = 5;
+  int retries = NUMBER_TIME_SERVERS;
   String response, datetime;
   while (retries > 0 && statusCode != 200) {
     Serial.println("Trying to get date and time ...");
-    httpTimeClient.get(timeServerAPI);
+    HttpClient httpTimeClient = HttpClient(wifiTimeClient, myTimeServerArray[retries-1].url, myTimeServerArray[retries-1].port);
+    
+    Serial.print("url: ");
+    Serial.println(myTimeServerArray[retries-1].url);
+
+    Serial.print("port: ");
+    Serial.println(String(myTimeServerArray[retries-1].port));
+
+    Serial.print("api: ");
+    Serial.println(myTimeServerArray[retries-1].api);
+
+    httpTimeClient.get(myTimeServerArray[retries-1].api);
+
     statusCode = httpTimeClient.responseStatusCode();
     response = httpTimeClient.responseBody();
     Serial.println("GetSetCurrentTime->statusCode: " + String(statusCode));
@@ -626,6 +657,7 @@ void GetSetCurrentTime() {
       Serial.println("Parsing input failed!");
       return;
     }
+    /*
     if (strcmp("worldtimeapi.org", timeServerAddress) == 0) {
       datetime = (const char*) myObject["datetime"];
     }
@@ -639,6 +671,8 @@ void GetSetCurrentTime() {
     int month = (datetime.substring(5,7)).toInt();
     int year = (datetime.substring(0,4)).toInt();
     setTime(hr, min, sec, day, month, year);
+    */
+    myTimeServerArray[retries].function(myObject);
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
     Alarm.free(retryGetTimeAlarmID);
@@ -926,27 +960,42 @@ void checkCLI() {
   }
 }
 
-// Function to manually read headers and extract the "Location" header
-String readLocationHeader(HttpClient& client) {
-  String header;
-  String location = "";
-  
-  while (client.available()) {
-    header = client.readStringUntil('\n');
-    header.trim();  // Remove any extra spaces and newlines
+void parse_worldtimeapi(JSONVar myObject) {
+    Serial.println("parse_worldtimeapi");
+    String datetime = (const char*) myObject["datetime"];
+    Serial.println("parse_worldtimeapi->datetime: " + datetime);
 
-    // If the line is empty, headers are finished
-    if (header.length() == 0) {
-      break;
-    }
-
-    // Check if this is the Location header
-    if (header.startsWith("Location: ")) {
-      location = header.substring(10);  // Extract the URL from the "Location: " line
-      break;
-    }
-  }
-
-  return location;
+    int hr = (datetime.substring(11,13)).toInt();
+    int min = (datetime.substring(14,16)).toInt();
+    int sec = (datetime.substring(17,19)).toInt();
+    int day = (datetime.substring(8,10)).toInt();
+    int month = (datetime.substring(5,7)).toInt();
+    int year = (datetime.substring(0,4)).toInt();
+    setTime(hr, min, sec, day, month, year);
 }
 
+void parse_worldclockapi(JSONVar myObject) {
+    Serial.println("parse_worldclockapi");
+    String datetime = (const char*) myObject["currentDateTime"];
+    Serial.println("parse_worldclockapi->datetime: " + datetime);
+    int hr = (datetime.substring(11,13)).toInt();
+    int min = (datetime.substring(14,16)).toInt();
+    int sec = 0;
+    int day = (datetime.substring(8,10)).toInt();
+    int month = (datetime.substring(5,7)).toInt();
+    int year = (datetime.substring(0,4)).toInt();
+    setTime(hr, min, sec, day, month, year);
+}
+
+void parse_timeapi(JSONVar myObject) {
+    Serial.println("parse_timeapi");
+    String datetime = (const char*) myObject["datetime"];
+    Serial.println("parse_timeapi->datetime: " + datetime);
+    int hr = (datetime.substring(11,13)).toInt();
+    int min = (datetime.substring(14,16)).toInt();
+    int sec = (datetime.substring(17,19)).toInt();
+    int day = (datetime.substring(8,10)).toInt();
+    int month = (datetime.substring(5,7)).toInt();
+    int year = (datetime.substring(0,4)).toInt();
+    setTime(hr, min, sec, day, month, year);
+}
