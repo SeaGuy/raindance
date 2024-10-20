@@ -144,6 +144,7 @@ void setDefaultSchedule();
 void parse_worldtimeapi(JSONVar myObject);
 void parse_worldclockapi(JSONVar myObject);
 void parse_timeapi(JSONVar myObject);
+String readLocationHeader(HttpClient& client);
 timeDayOfWeek_t convertInt2DOW(int value);
 
 // WiFi settings
@@ -160,9 +161,9 @@ struct TimeServerData {
 };
 
 TimeServerData myTimeServerArray[] = {
-  { "worldtimeapi.org.com", 80, "/api/timezone/America/New_York", parse_worldtimeapi },
+  { "worldtimeapi.org", 80, "/api/timezone/America/New_York", parse_worldtimeapi },
   { "worldclockapi.com", 80, "/api/json/est/now", parse_worldclockapi },
-  { "timeapi.io", 80, "/api/Time/current/zone?timeZone=America/New_York", parse_timeapi }
+  { "timeapi.io", 80, "/api/time/current/zone?timeZone=America/New_York", parse_timeapi }
 };
 
 const int NUMBER_TIME_SERVERS = sizeof(myTimeServerArray) / sizeof(myTimeServerArray[0]);
@@ -635,10 +636,8 @@ void GetSetCurrentTime() {
     
     Serial.print("url: ");
     Serial.println(myTimeServerArray[retries-1].url);
-
     Serial.print("port: ");
     Serial.println(String(myTimeServerArray[retries-1].port));
-
     Serial.print("api: ");
     Serial.println(myTimeServerArray[retries-1].api);
 
@@ -657,21 +656,6 @@ void GetSetCurrentTime() {
       Serial.println("Parsing input failed!");
       return;
     }
-    /*
-    if (strcmp("worldtimeapi.org", timeServerAddress) == 0) {
-      datetime = (const char*) myObject["datetime"];
-    }
-    if (strcmp("worldclockapi.com", timeServerAddress) == 0) {
-      datetime = (const char*) myObject["currentDateTime"];
-    }
-    int hr = (datetime.substring(11,13)).toInt();
-    int min = (datetime.substring(14,16)).toInt();
-    int sec = (datetime.substring(17,19)).toInt();
-    int day = (datetime.substring(8,10)).toInt();
-    int month = (datetime.substring(5,7)).toInt();
-    int year = (datetime.substring(0,4)).toInt();
-    setTime(hr, min, sec, day, month, year);
-    */
     myTimeServerArray[retries].function(myObject);
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
@@ -998,4 +982,24 @@ void parse_timeapi(JSONVar myObject) {
     int month = (datetime.substring(5,7)).toInt();
     int year = (datetime.substring(0,4)).toInt();
     setTime(hr, min, sec, day, month, year);
+}
+
+// Function to manually read headers and extract the "Location" header
+String readLocationHeader(HttpClient& client) {
+  String header;
+  String location = "";
+  while (client.available()) {
+    header = client.readStringUntil('\n');
+    header.trim();  // Remove any extra spaces and newlines
+    // If the line is empty, headers are finished
+    if (header.length() == 0) {
+      break;
+    }
+    // Check if this is the Location header
+    if (header.startsWith("Location: ")) {
+      location = header.substring(10);  // Extract the URL from the "Location: " line
+      break;
+    }
+  }
+  return location;
 }
