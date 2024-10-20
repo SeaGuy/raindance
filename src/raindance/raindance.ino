@@ -144,7 +144,6 @@ void setDefaultSchedule();
 void parse_worldtimeapi(JSONVar myObject);
 void parse_worldclockapi(JSONVar myObject);
 void parse_timeapi(JSONVar myObject);
-String readLocationHeader(HttpClient& client);
 timeDayOfWeek_t convertInt2DOW(int value);
 
 // WiFi settings
@@ -161,9 +160,9 @@ struct TimeServerData {
 };
 
 TimeServerData myTimeServerArray[] = {
-  { "worldtimeapi.org", 80, "/api/timezone/America/New_York", parse_worldtimeapi },
-  { "worldclockapi.com", 80, "/api/json/est/now", parse_worldclockapi },
-  { "timeapi.io", 80, "/api/time/current/zone?timeZone=America/New_York", parse_timeapi }
+  { "worldtimeapi.org",   80,   "/api/timezone/America/New_York",                     parse_worldtimeapi },           // 213.188.196.246
+  { "worldclockapi.com",  80,   "/api/json/est/now",                                  parse_worldclockapi },
+  { "timeapi.io",         80,   "/api/time/current/zone?timeZone=America/New_York",   parse_timeapi }                 // 86.105.246.247
 };
 
 const int NUMBER_TIME_SERVERS = sizeof(myTimeServerArray) / sizeof(myTimeServerArray[0]);
@@ -657,6 +656,7 @@ void GetSetCurrentTime() {
       return;
     }
     myTimeServerArray[retries].function(myObject);
+    isTimeSet = true;
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
     Alarm.free(retryGetTimeAlarmID);
@@ -984,22 +984,3 @@ void parse_timeapi(JSONVar myObject) {
     setTime(hr, min, sec, day, month, year);
 }
 
-// Function to manually read headers and extract the "Location" header
-String readLocationHeader(HttpClient& client) {
-  String header;
-  String location = "";
-  while (client.available()) {
-    header = client.readStringUntil('\n');
-    header.trim();  // Remove any extra spaces and newlines
-    // If the line is empty, headers are finished
-    if (header.length() == 0) {
-      break;
-    }
-    // Check if this is the Location header
-    if (header.startsWith("Location: ")) {
-      location = header.substring(10);  // Extract the URL from the "Location: " line
-      break;
-    }
-  }
-  return location;
-}
