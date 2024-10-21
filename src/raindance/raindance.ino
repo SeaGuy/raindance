@@ -74,6 +74,14 @@ address   type        description of value
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
+#define LED_SHORT_BURST_MILLISECONDS  256
+#define APP_RED_DELAY 256
+#define APP_ORN_DELAY 512
+#define APP_YEL_DELAY 1024
+#define APP_GRN_DELAY 2048
+#define APP_BLU_DELAY 3072
+#define APP_IND_DELAY 4096
+
 // Global variables
 AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
 AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
@@ -129,6 +137,7 @@ String readJsonBody(WiFiClient& client);
 bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj);
 void ScheduledSprinklerOn();
 void ScheduledSprinklerOff();
+void reportRelayState();
 bool PrintCurrentTime();
 void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule);
 void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules);
@@ -186,7 +195,6 @@ WiFiClient wifiTimeClient;
 
 // pin assignments
 const int relayPin = 7;   // pin for the relay (D7)
-int relayState = 0;
 
 const int ___red_led_pin = 14;  // pin for red LED problem patterns
 const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
@@ -194,13 +202,14 @@ const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water
 
 char hiTimeStamp[25];
 
+
 void setup() {
   setupSerial();
-  delay(3000);
+  delay(APP_GRN_DELAY);
   setupRelay();
-  delay(3000);
+  delay(APP_GRN_DELAY);
   connectToWiFi();
-  delay(3000);
+  delay(APP_GRN_DELAY);
   // Set timeout for HTTP requests
   wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
   // Initialize EEPROM
@@ -208,70 +217,55 @@ void setup() {
     Serial.println("Failed to initialise EEPROM");
     return;
   }
-  delay(3000);
+  delay(APP_GRN_DELAY);
   server.begin();
-  delay(3000);
-  
+  delay(APP_GRN_DELAY);
   getSetNTPTime();
-  delay(3000);
+  delay(APP_GRN_DELAY);
   if (!PrintCurrentTime()) {
     GetSetCurrentTime();
   }
-  delay(3000);
+  delay(APP_GRN_DELAY);
   eepromDump(EEPROM_MAX_ADDRESS);
-  delay(3000);
-
-
+  delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
   if (validateSchedule(mySprinklerSchedule)) {
     Serial.println("setup->schedule is valid ...");
   } else {
       Serial.println("setup->schedule is not valid ...");
   };
-
-
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-  delay(3000);
+  delay(APP_GRN_DELAY);
   setupAlarms();
-
   // set the LED pins as  outputs
   pinMode(__blue_led_pin, OUTPUT);
   pinMode(___red_led_pin, OUTPUT);
   pinMode(_green_led_pin, OUTPUT);
-
   // pulse each LED 3 times to verify working on startup
-  pulseLED(__blue_led_pin, 3, 256);
-  pulseLED(___red_led_pin, 3, 256);
-  pulseLED(_green_led_pin, 3, 256);
+  pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  pulseLED(_green_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
 }
+
 
 void loop() {
   Alarm.delay(1000); // needed to activate alarms
   handleClientRequests();
   if (!PrintCurrentTime()) {
-    pulseLED(___red_led_pin, 3, 256);
+    pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   }
-  // Read the state of the relay pin
-  relayState = digitalRead(relayPin);
-  Serial.print("relayState: ");
-  Serial.println(relayState);
-  if (relayState == HIGH) {
-    Serial.println("relay is ON");
-    pulseLED(__blue_led_pin, 3, 256);
-  } else {
-    Serial.println("relay is OFF");
-  };
+  reportRelayState();
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   checkCLI();
-  delay(2048);
+  delay(APP_GRN_DELAY);
 }
 
 void setupSerial() {
   Serial.begin(115200);
-  delay(500);
+  delay(1024);
   while (!Serial) {
     Serial.println("Setting up serial port");
-    delay(500);
+    delay(1024);
   }
   Serial.println("Serial port connected");
 }
@@ -411,7 +405,7 @@ void handleClientRequests() {
 
 void handleGetRequest(String command, JSONVar& responseObj) {
   Serial.println("handleGetRequest->Processing GET request with command: " + command);
-  commandRcvdLED_ON();
+  pulseLED(_green_led_pin, 1, LED_SHORT_BURST_MILLISECONDS);
   uint8_t arduinoCommandError = 0;
   if (command == "ONN") {
     digitalWrite(relayPin, HIGH);
@@ -863,14 +857,6 @@ void pulseLED(int theLED, int numberPulses, int duration) {
   }
 }
 
-void commandRcvdLED_ON() {
-  digitalWrite(_green_led_pin, HIGH);   // ensure off
-  Serial.println("commandRcvdLED_ON()");
-  digitalWrite(_green_led_pin, LOW);
-  delay(1024);
-  digitalWrite(_green_led_pin, HIGH);
-}
-
 void onboardLED_ON(int theLED, bool pulsed, int duration) {
   char theArgs[64];
   digitalWrite(theLED, HIGH);
@@ -1008,4 +994,17 @@ void getSetNTPTime() {
   Serial.println(ntpClient.getFormattedTime());
   setTime(t);
   ntpClient.end();
+}
+
+void reportRelayState() {
+  // Read the state of the relay pin
+  int relayState = digitalRead(relayPin);
+  Serial.print("relayState: ");
+  Serial.println(relayState);
+  if (relayState == HIGH) {
+    Serial.println("relay is ON");
+    pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  } else {
+    Serial.println("relay is OFF");
+  };
 }
