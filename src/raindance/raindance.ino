@@ -81,7 +81,6 @@ AlarmID_t getSetCurrentTimeAlarmID;
 AlarmID_t onAlarmID;
 AlarmID_t offAlarmID;
 AlarmID_t retryGetTimeAlarmID;
-AlarmID_t blueLEDpulsingAlarmID;
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -194,7 +193,6 @@ const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
 const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water flowing
 
 char hiTimeStamp[25];
-bool isTimeSet = false;
 
 void setup() {
   setupSerial();
@@ -259,6 +257,7 @@ void loop() {
   Serial.println(relayState);
   if (relayState == HIGH) {
     Serial.println("relay is ON");
+    pulseLED(__blue_led_pin, 3, 256);
   } else {
     Serial.println("relay is OFF");
   };
@@ -416,13 +415,8 @@ void handleGetRequest(String command, JSONVar& responseObj) {
   uint8_t arduinoCommandError = 0;
   if (command == "ONN") {
     digitalWrite(relayPin, HIGH);
-    blueLEDpulsingAlarmID = Alarm.timerRepeat(1, blueLED_ON);
-    // responseObj["status"] = "Sprinkler is ON";
   } else if (command == "OFF") {
       digitalWrite(relayPin, LOW);
-      Serial.println("handleGetRequest->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
-      Alarm.free(blueLEDpulsingAlarmID);
-      // responseObj["status"] = "Sprinkler is OFF";
   } else if (command == "HI!") {
       // do nothing but prepare a heartbeat response
   } else {
@@ -564,8 +558,6 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
 void ScheduledSprinklerOn() {
   int duration = 0;
   digitalWrite(relayPin, HIGH);
-  Alarm.free(blueLEDpulsingAlarmID);
-  blueLEDpulsingAlarmID = Alarm.timerRepeat(1, blueLED_ON);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
   Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
   onAlarmID = Alarm.timerOnce(duration, ScheduledSprinklerOff);
@@ -574,15 +566,12 @@ void ScheduledSprinklerOn() {
 void ScheduledSprinklerOff() {
   Serial.println("ScheduledSprinklerOff->zones: " + String(zones));
   digitalWrite(relayPin, LOW);
-  onboardLED_OFF(__blue_led_pin);
   zones = zones - 1;
   if (zones > 0) {
     offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
   } else {
     zones = (int)(mySprinklerSchedule.zones);
   }
-  Serial.println("ScheduledSprinklerOff->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
-  Alarm.free(blueLEDpulsingAlarmID);
 }
 
 bool PrintCurrentTime() {
@@ -669,7 +658,6 @@ void GetSetCurrentTime() {
       return;
     }
     myTimeServerArray[retries].function(myObject);
-    isTimeSet = true;
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
     Alarm.free(retryGetTimeAlarmID);
@@ -813,9 +801,6 @@ void clearAlarms() {
   Alarm.free(offAlarmID);
   Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
   Alarm.free(retryGetTimeAlarmID);
-  Serial.println("clearAlarms->clearing blueLEDpulsingAlarmID: " + String(blueLEDpulsingAlarmID));
-  Alarm.free(blueLEDpulsingAlarmID);
-  
 }
 
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination) {
@@ -884,14 +869,6 @@ void commandRcvdLED_ON() {
   digitalWrite(_green_led_pin, LOW);
   delay(1024);
   digitalWrite(_green_led_pin, HIGH);
-}
-
-void blueLED_ON() {
-  digitalWrite(__blue_led_pin, HIGH);   // ensure off
-  Serial.println("blueLED_ON()");
-  digitalWrite(__blue_led_pin, LOW);
-  delay(1024);
-  digitalWrite(__blue_led_pin, HIGH);
 }
 
 void onboardLED_ON(int theLED, bool pulsed, int duration) {
