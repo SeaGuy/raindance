@@ -54,6 +54,9 @@ address   type        description of value
 #include <ArduinoHttpClient.h>
 #include <Arduino_JSON.h>
 
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+
 // EEPROM settings
 #define EEPROM_SIZE 128
 
@@ -127,7 +130,7 @@ String readJsonBody(WiFiClient& client);
 bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj);
 void ScheduledSprinklerOn();
 void ScheduledSprinklerOff();
-void PrintCurrentTime();
+bool PrintCurrentTime();
 void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule);
 void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules);
 void GetSetCurrentTime();
@@ -210,9 +213,12 @@ void setup() {
   delay(3000);
   server.begin();
   delay(3000);
-  GetSetCurrentTime();
+  
+  getSetNTPTime();
   delay(3000);
-  PrintCurrentTime();
+  if (!PrintCurrentTime()) {
+    GetSetCurrentTime();
+  }
   delay(3000);
   eepromDump(EEPROM_MAX_ADDRESS);
   delay(3000);
@@ -244,7 +250,9 @@ void setup() {
 void loop() {
   Alarm.delay(1000); // needed to activate alarms
   handleClientRequests();
-  PrintCurrentTime();
+  if (!PrintCurrentTime()) {
+    pulseLED(___red_led_pin, 3, 256);
+  }
   // Read the state of the relay pin
   relayState = digitalRead(relayPin);
   Serial.print("relayState: ");
@@ -577,7 +585,8 @@ void ScheduledSprinklerOff() {
   Alarm.free(blueLEDpulsingAlarmID);
 }
 
-void PrintCurrentTime() {
+bool PrintCurrentTime() {
+  bool isTimeSet = false;
   if (year() != 1970) {
     char timestamp[20]; // Array to hold the formatted timestamp
     int y = year();
@@ -590,9 +599,11 @@ void PrintCurrentTime() {
     sprintf(timestamp, "%04d-%02d-%02dT%02d:%02d:%02d", y, m, d, h, min, s);
     Serial.print("Current time: ");
     Serial.println(timestamp);
+    isTimeSet = true;
   } else {
     Serial.println("Time is NOT Set!");
   }
+  return isTimeSet;
 }
 
 void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule) {
@@ -629,10 +640,11 @@ void GetSetCurrentTime() {
   int statusCode = 0;
   int retries = NUMBER_TIME_SERVERS;
   String response, datetime;
+
   while (retries > 0 && statusCode != 200) {
     Serial.println("Trying to get date and time ...");
     HttpClient httpTimeClient = HttpClient(wifiTimeClient, myTimeServerArray[retries-1].url, myTimeServerArray[retries-1].port);
-    
+    httpTimeClient.setHttpResponseTimeout((uint32_t) 4096);
     Serial.print("url: ");
     Serial.println(myTimeServerArray[retries-1].url);
     Serial.print("port: ");
@@ -647,6 +659,7 @@ void GetSetCurrentTime() {
     Serial.println("GetSetCurrentTime->statusCode: " + String(statusCode));
     Serial.println("GetSetCurrentTime->response: " + response);
     retries--;
+    httpTimeClient.stop();
     delay(1024);  // Delay 1 second between retries
   }
   if (statusCode == 200) {
@@ -927,17 +940,21 @@ void checkCLI() {
             
             // Set the time using the parsed values
             setTime(hour, minute, second, day, month, year);
-            Serial.println("Time set successfully.");
-            PrintCurrentTime();
+            delay(1024);
+            if (PrintCurrentTime()) {
+              Serial.println("checkCLI->Time set successfully.");
+            } else {
+                Serial.println("checkCLI->Time NOT set successfully.");
+            }
           } else {
-            Serial.println("Invalid format. Use YYYY-MM-DDTHH:MM:SS.");
+            Serial.println("checkCLI->Invalid format. Use YYYY-MM-DDTHH:MM:SS.");
           }
           break;
         
         // Add more cases for other command numbers if needed
 
         default:
-          Serial.println("Unknown command number.");
+          Serial.println("checkCLI->Unknown command number.");
           break;
       }
     }
@@ -984,3 +1001,34 @@ void parse_timeapi(JSONVar myObject) {
     setTime(hr, min, sec, day, month, year);
 }
 
+void getSetNTPTime() {
+  Serial.print("getSetNTPTime");
+  WiFiUDP ntpUDP;
+  NTPClient ntpClient(ntpUDP, "time.google.com", 3600 * -4);  // UTC offset in seconds
+  delay(2048);
+  ntpClient.begin();
+  delay(1024);
+  ntpClient.update();
+  delay(1024);
+  Serial.print("getSetNTPTime->ntpClient.getFormattedTime(): ");
+  Serial.println(ntpClient.getFormattedTime());
+  unsigned long t = ntpClient.getEpochTime();
+  Serial.println(t);
+
+  // correct for daylight savings time
+  uint8_t theMonth = month(t);
+  Serial.print("getSetNTPTime->theMonth: ");
+  Serial.println(theMonth);
+  int offsetUTC = (theMonth >= 3 && theMonth <= 11) ? (3600 * -4) : (3600 * -5);
+  ntpClient.setTimeOffset(offsetUTC);
+  Serial.println(offsetUTC);
+  ntpClient.update();
+
+  delay(1024);
+  t = ntpClient.getEpochTime();
+  delay(1024);
+  Serial.print("getSetNTPTime->ntpClient.getFormattedTime(): ");
+  Serial.println(ntpClient.getFormattedTime());
+  setTime(t);
+  ntpClient.end();
+}
