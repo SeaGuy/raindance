@@ -965,7 +965,10 @@ void parse_timeapi(JSONVar myObject) {
 }
 
 void getSetNTPTime() {
-  Serial.print("getSetNTPTime");
+  int offsetUTC = 0;
+  char sprintfBuffer[128];
+
+  Serial.println("getting NTP date and time ...");
   WiFiUDP ntpUDP;
   NTPClient ntpClient(ntpUDP, "time.google.com", 3600 * -4);  // UTC offset in seconds
   delay(2048);
@@ -973,8 +976,9 @@ void getSetNTPTime() {
   delay(1024);
   ntpClient.update();
   delay(1024);
-  Serial.print("getSetNTPTime->ntpClient.getFormattedTime(): ");
-  Serial.println(ntpClient.getFormattedTime());
+  sprintf(sprintfBuffer, "getSetNTPTime->(offset=%d)->ntpClient.getFormattedTime(): %s", offsetUTC, ntpClient.getFormattedTime());
+  Serial.println(sprintfBuffer);
+  //Serial.println(ntpClient.getFormattedTime());
   unsigned long t = ntpClient.getEpochTime();
   Serial.println(t);
 
@@ -982,16 +986,18 @@ void getSetNTPTime() {
   uint8_t theMonth = month(t);
   Serial.print("getSetNTPTime->theMonth: ");
   Serial.println(theMonth);
-  int offsetUTC = (theMonth >= 3 && theMonth <= 11) ? (3600 * -4) : (3600 * -5);
+  offsetUTC = (theMonth >= 3 && theMonth <= 11) ? (3600 * -4) : (3600 * -5);
   ntpClient.setTimeOffset(offsetUTC);
-  Serial.println(offsetUTC);
   ntpClient.update();
-
   delay(1024);
   t = ntpClient.getEpochTime();
   delay(1024);
-  Serial.print("getSetNTPTime->ntpClient.getFormattedTime(): ");
-  Serial.println(ntpClient.getFormattedTime());
+
+  //Serial.print("getSetNTPTime->after-offset->ntpClient.getFormattedTime(): ");
+  //Serial.println(ntpClient.getFormattedTime());
+  sprintf(sprintfBuffer, "getSetNTPTime->(offset=%d)->ntpClient.getFormattedTime(): %s", offsetUTC, ntpClient.getFormattedTime());
+  Serial.println(sprintfBuffer);
+
   setTime(t);
   ntpClient.end();
 }
