@@ -979,13 +979,24 @@ void getSetNTPTime() {
   sprintf(sprintfBuffer, "getSetNTPTime->(offset=%d)->ntpClient.getFormattedTime(): %s", offsetUTC, ntpClient.getFormattedTime());
   Serial.println(sprintfBuffer);
   //Serial.println(ntpClient.getFormattedTime());
-  unsigned long t = ntpClient.getEpochTime();
-  Serial.println(t);
 
-  // correct for daylight savings time
-  uint8_t theMonth = month(t);
-  Serial.print("getSetNTPTime->theMonth: ");
-  Serial.println(theMonth);
+  unsigned long t = (unsigned long)0;
+  int theMonth = (int)0;
+  int theYear = (int)0;
+  while ((t <= 0) || (theYear < 2024)) {
+    t = ntpClient.getEpochTime();
+    delay(2048);
+    Serial.print("getSetNTPTime->t: ");
+    Serial.println(t);
+    // correct for daylight savings time
+    theMonth = month(t);
+    theYear = year(t);
+    Serial.print("getSetNTPTime->theMonth: ");
+    Serial.println(theMonth);
+    Serial.print("getSetNTPTime->theYear: ");
+    Serial.println(theYear);
+  }
+  
   offsetUTC = (theMonth >= 3 && theMonth <= 11) ? (3600 * -4) : (3600 * -5);
   ntpClient.setTimeOffset(offsetUTC);
   ntpClient.update();
