@@ -57,6 +57,8 @@ address   type        description of value
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
+#include <ArduinoOTA.h>
+
 // EEPROM settings
 #define EEPROM_SIZE 128
 
@@ -245,6 +247,9 @@ void setup() {
   pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   pulseLED(_green_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  Serial.println("setup->beginning OTA ...");
+  ArduinoOTA.setPassword("Kirtan7&04");
+  ArduinoOTA.begin();
 }
 
 
@@ -257,6 +262,7 @@ void loop() {
   reportRelayState();
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   checkCLI();
+  ArduinoOTA.handle();
   delay(APP_GRN_DELAY);
 }
 
