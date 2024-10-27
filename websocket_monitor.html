@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 WebSocket Monitor</title>
+</head>
+<body>
+    <h1>WebSocket Monitor</h1>
+    <div id="output"></div>
+    <script>
+        const ws = new WebSocket('ws://192.168.0.32:81');
+
+        ws.onopen = () => {
+            console.log("WebSocket connection established.");
+        };
+
+        ws.onmessage = (event) => {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p>${event.data}</p>`;
+            console.log("Received message:", event.data);
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = (event) => {
+            if (event.wasClean) {
+                console.log(`WebSocket closed cleanly, code=${event.code}, reason=${event.reason}`);
+            } else {
+                console.warn("WebSocket connection closed unexpectedly.");
+            }
+        };
+    </script>
+</body>
+</html>

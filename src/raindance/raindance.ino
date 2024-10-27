@@ -44,6 +44,7 @@ address   type        description of value
 6         uint16_t    least significant byte (LSB) of second schedule entry
 */
 
+
 // Include necessary libraries
 #include <WiFi.h>
 #include <EEPROM.h>
@@ -58,6 +59,7 @@ address   type        description of value
 #include <WiFiUdp.h>
 
 #include <ArduinoOTA.h>
+#include <WebSocketsServer.h>
 
 // EEPROM settings
 #define EEPROM_SIZE 128
@@ -83,6 +85,7 @@ address   type        description of value
 #define APP_GRN_DELAY 2048
 #define APP_BLU_DELAY 3072
 #define APP_IND_DELAY 4096
+
 
 // Global variables
 AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
@@ -157,6 +160,7 @@ void setDefaultSchedule();
 void parse_worldtimeapi(JSONVar myObject);
 void parse_worldclockapi(JSONVar myObject);
 void parse_timeapi(JSONVar myObject);
+void handleWebSockets();
 timeDayOfWeek_t convertInt2DOW(int value);
 
 // WiFi settings
@@ -202,8 +206,19 @@ const int ___red_led_pin = 14;  // pin for red LED problem patterns
 const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
 const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water flowing
 
-char hiTimeStamp[25];
+// WebSockets stuff
+//websockets::WebsocketsServer wsServer;
+// std::vector<websockets::WebsocketsClient> clients; // Vector to store client
+//websockets::WebsocketsClient wsClient;
+unsigned long previousMillis = 0;
+const long interval = 5000; // Adjust as needed to check every 5 seconds
 
+WebSocketsServer myWebSocketServer = WebSocketsServer(81);  // WebSocket server on port 81
+uint8_t wsNum = (uint8_t)0;
+
+
+char hiTimeStamp[25];
+uint8_t handleWebSocketsCounter = (uint8_t)0;
 
 void setup() {
   setupSerial();
@@ -232,9 +247,9 @@ void setup() {
   delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
   if (validateSchedule(mySprinklerSchedule)) {
-    Serial.println("setup->schedule is valid ...");
+    logToSerialAndWebSocket("setup->schedule is valid ...");
   } else {
-      Serial.println("setup->schedule is not valid ...");
+      logToSerialAndWebSocket("setup->schedule is not valid ...");
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(APP_GRN_DELAY);
@@ -250,6 +265,19 @@ void setup() {
   Serial.println("setup->beginning OTA ...");
   ArduinoOTA.setPassword("Kirtan7&04");
   ArduinoOTA.begin();
+  delay(APP_GRN_DELAY);
+  
+  // Start WebSocket server on port 81
+  /*
+  wsServer.listen(81);
+  Serial.print("WebSocket server started on ws://");
+  Serial.print(WiFi.localIP());
+  Serial.println(":81");
+  */
+  
+  // Start the WebSocket server
+  myWebSocketServer.begin();
+  myWebSocketServer.onEvent(webSocketEvent);  // Define callback function
 }
 
 
@@ -263,7 +291,9 @@ void loop() {
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   checkCLI();
   ArduinoOTA.handle();
-  delay(APP_GRN_DELAY);
+  delay(APP_ORN_DELAY);
+  // handleWebSockets();
+  myWebSocketServer.loop();
 }
 
 void setupSerial() {
@@ -404,8 +434,8 @@ void handleClientRequests() {
     delay(1024);
     client.stop();
   } else {
-    Serial.println("No client connected");
-    delay(5000);
+    Serial.println("No WiFi client connected");
+    delay(1024);
   }
 }
 
@@ -886,6 +916,7 @@ void onboardLED_OFF(int theLED) {
 
 
 void checkCLI() {
+  logToSerialAndWebSocket("checkCLI");
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n');
 
@@ -1031,3 +1062,147 @@ void reportRelayState() {
     Serial.println("relay is OFF");
   };
 }
+/*
+void handleWebSockets() {
+  logToSerialAndWebSocket("handleWebSockets");
+  unsigned long currentMillis = millis();
+
+
+  // Check WiFi connection before attempting WebSocket handling
+  if (WiFi.status() != WL_CONNECTED) {
+    logToSerialAndWebSocket("WiFi not connected");
+    WiFi.begin(ssid, password);
+    return;
+  }
+
+  // Only attempt to accept a new client at regular intervals
+    if (currentMillis - previousMillis >= interval) {
+      
+      previousMillis = currentMillis;
+
+      // Accept a new client if not already connected
+      if (!wsClient.available()) {
+        logToSerialAndWebSocket("handleWebSockets->wsClient NOT available ...");
+        wsClient = wsServer.accept();
+        if (wsClient.available()) {
+          logToSerialAndWebSocket("New WebSocket client connected");
+          wsClient.send("Welcome to raindance on Bill's Arduino Nano ESP32 via WebSocket!");  // Send initial message on connection
+        } else {
+          logToSerialAndWebSocket("WebSocket client NOT connected");
+          delay(100);
+          return;
+        }
+      } else {
+          logToSerialAndWebSocket("handleWebSockets->wsClient available ...");
+      }
+    }
+  // Check if there’s incoming Serial data to send to the client
+  Serial.print("handleWebSockets->wsClient.available(): ");
+  Serial.println(wsClient.available());
+  Serial.print("handleWebSockets->Serial.available(): ");
+  Serial.println(Serial.available());
+
+
+  if (wsClient.available()) {
+  // if (wsClient.available() && Serial.available()) {
+    logToSerialAndWebSocket("handleWebSockets->reading Serial data ... ");
+    String message = Serial.readStringUntil('\n');
+    Serial.println("Serial data available for WebSocket client: " + message);
+    wsClient.send(message);  // Send data to the connected client
+  }
+  // Check if the client is disconnected
+  if (!wsClient.available()) {
+    logToSerialAndWebSocket("WebSocket client disconnected or unavailable");
+    wsClient.close();
+  }
+
+  /*
+  // Poll the WebSocket server to maintain the connection
+  Serial.print("handleWebSockets->handleWebSocketsCounter: " );
+  Serial.println(handleWebSocketsCounter);
+  if ((handleWebSocketsCounter++ % 10) == 0) {
+    Serial.println("handleWebSockets->ready to poll ...");
+    wsServer.poll();
+    delay(5);
+    Serial.println("handleWebSockets->done polling ...");
+  } 
+  if (handleWebSocketsCounter >= (uint8_t)127) {
+    handleWebSocketsCounter = (uint8_t)0;
+  }
+  */
+/*
+  logToSerialAndWebSocket("handleWebSockets->ready to poll ...");
+  wsServer.poll();
+  delay(24);
+  logToSerialAndWebSocket("handleWebSockets->done polling ...");
+}
+*/
+
+
+/*
+void handleWebSockets() {
+  Serial.println("handleWebSockets");
+  // Check for new WebSocket connections
+  auto client = wsServer.accept();
+  if (client.available()) {
+      Serial.println("handleWebSockets->client available and new WebSocket client connected ...");
+      clients.push_back(client); // Add new client to the list
+  } else {
+    Serial.println("handleWebSockets->client NOT available ...");
+  }
+
+  // Send Serial data to each connected client
+  if (Serial.available()) {
+      Serial.println("handleWebSockets->serial available ...");
+      String message = Serial.readStringUntil('\n');
+      Serial.println("handleWebSockets->Serial data available for WebSocket clients: " + message);
+      for (auto& client : clients) {
+          if (client.available()) {
+              client.send(message); // Send data to each connected client
+          } else {
+              client.close(); // Remove disconnected clients
+          }
+      }
+      clients.erase(
+          std::remove_if(clients.begin(), clients.end(),
+                          [](websockets::WebsocketsClient& c) { return !c.available(); }),
+          clients.end());
+  } else {
+    Serial.println("handleWebSockets->serial NOT available ...");
+  }
+
+  // Regularly poll WebSocket server to keep connections alive
+  Serial.print("handleWebSockets->handleWebSocketsCounter: " );
+  Serial.println(handleWebSocketsCounter);
+  if ((handleWebSocketsCounter++ % 10) == 0) {
+    wsServer.poll();
+    delay(64);
+  } 
+  if (handleWebSocketsCounter >= (uint8_t)127) {
+    handleWebSocketsCounter = (uint8_t)0;
+  }
+}
+  */
+
+void logToSerialAndWebSocket(const String& message) {
+    Serial.println(message);
+    myWebSocketServer.sendTXT(wsNum, "MESSAGE");
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+    switch(type) {
+        case WStype_DISCONNECTED:
+            Serial.printf("[%u] Disconnected!\n", num);
+            break;
+        case WStype_CONNECTED:
+            Serial.printf("[%u] Connected!\n", num);
+            myWebSocketServer.sendTXT(num, "Hello from ESP32!");
+            wsNum = num;
+            break;
+        case WStype_TEXT:
+            Serial.printf("[%u] Received: %s\n", num, payload);
+            myWebSocketServer.sendTXT(num, "Message received");
+            break;
+    }
+}
+

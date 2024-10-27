@@ -2,8 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     
-    // let myArduinoIPAddress = "192.168.0.238"    // Arduino Nano WiFi Rev2
-    let myArduinoIPAddress = "192.168.0.32"     // Arduino Nano ESP32
+    // let myArduinoIPAddress = "192.168.0.238"     // Arduino Nano WiFi Rev2
+    let myArduinoIPAddress = "192.168.0.32"         // Arduino Nano ESP32
 
     let HEARTBEAT_INTERVAL: Double = 15
     
