@@ -916,6 +916,7 @@ void onboardLED_OFF(int theLED) {
 
 
 void checkCLI() {
+  Serial.println("checkCLI");
   logToSerialAndWebSocket("checkCLI");
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n');
@@ -1185,24 +1186,34 @@ void handleWebSockets() {
   */
 
 void logToSerialAndWebSocket(const String& message) {
-    Serial.println(message);
+  Serial.print("logToSerialAndWebSocket->message: ");
+  Serial.println(message);
+  if (myWebSocketServer.clientIsConnected(wsNum)) {
+    Serial.println("logToSerialAndWebSocket->client is connected ...");
     myWebSocketServer.sendTXT(wsNum, "MESSAGE");
+  } else {
+    Serial.println("logToSerialAndWebSocket->client is NOT connected ...");
+  }
+  
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-    switch(type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("[%u] Disconnected!\n", num);
-            break;
-        case WStype_CONNECTED:
-            Serial.printf("[%u] Connected!\n", num);
-            myWebSocketServer.sendTXT(num, "Hello from ESP32!");
-            wsNum = num;
-            break;
-        case WStype_TEXT:
-            Serial.printf("[%u] Received: %s\n", num, payload);
-            myWebSocketServer.sendTXT(num, "Message received");
-            break;
-    }
+  wsNum = num;
+  switch(type) {
+      case WStype_DISCONNECTED:
+          Serial.printf("WEBSOCKETEVENT->[%u] Disconnected!\n", num);
+          myWebSocketServer.disableHeartbeat();
+          break;
+      case WStype_CONNECTED:
+          Serial.printf("WEBSOCKETEVENT->[%u] Connected!\n", num);
+          myWebSocketServer.enableHeartbeat(1024, 1024, 8);
+          myWebSocketServer.sendTXT(num, "Hello from ESP32!");
+          wsNum = num;
+          break;
+      case WStype_TEXT:
+          Serial.printf("WEBSOCKETEVENT->[%u] Received: %s\n", num, payload);
+          myWebSocketServer.sendTXT(num, "Message received");
+          break;
+  }
 }
 
