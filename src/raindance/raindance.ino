@@ -241,26 +241,15 @@ void setup() {
   delay(APP_GRN_DELAY);
 }
 
-
 void loop() {
   Alarm.delay(1000); // needed to activate alarms
-  
-  Serial.println("loop->handleClientRequests");
   handleClientRequests();
-
   if (!PrintCurrentTime()) {
     pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   }
-  
-  Serial.println("loop->reportRelayState");
   reportRelayState();
-
-  Serial.println("loop->PrintSprinklerSchedule");
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
-
-  Serial.println("loop->checkCLI");
   checkCLI();
-
   delay(APP_ORN_DELAY);
 }
 
@@ -315,9 +304,9 @@ void getScheduleFromEEPROM() {
   eepromSchedule.zones = numZones;
   eepromSchedule.durationMinutes = numMinutes;
   eepromSchedule.numberOfTimeSchedules = numScheds;
-  Serial.println("getScheduleFromEEPROM->numZones in EEPROM: " + String(numZones));
-  Serial.println("getScheduleFromEEPROM->numMinutes in EEPROM: " + String(numMinutes));
-  Serial.println("getScheduleFromEEPROM->numScheds in EEPROM: " + String(numScheds));
+  //Serial.println("getScheduleFromEEPROM->numZones in EEPROM: " + String(numZones));
+  //Serial.println("getScheduleFromEEPROM->numMinutes in EEPROM: " + String(numMinutes));
+  //Serial.println("getScheduleFromEEPROM->numScheds in EEPROM: " + String(numScheds));
   if (numScheds >= 1) {
     for (int i = 0; i <= ((int)numScheds - 1); i++) { 
         value = readUint16FromEEPROM(EEPROM_ADDR_FIRST_SCHED + (2 * i));
@@ -325,9 +314,9 @@ void getScheduleFromEEPROM() {
         uint16_t hourMinBits = (uint16_t)((value >> 3) & 0x07FF);
         eepromSchedule.myTimeSchedule[i].hour = (uint8_t)(hourMinBits / 60); // divide by 60 minutes;
         eepromSchedule.myTimeSchedule[i].minute = (uint8_t)(hourMinBits % 60); // modulus after divide by 60 minutes
-        Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].dayOfTheWeek: " + String(eepromSchedule.myTimeSchedule[i].dayOfTheWeek));
-        Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].hour: " + String(eepromSchedule.myTimeSchedule[i].hour));
-        Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].minute: " + String(eepromSchedule.myTimeSchedule[i].minute));
+        //Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].dayOfTheWeek: " + String(eepromSchedule.myTimeSchedule[i].dayOfTheWeek));
+        //Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].hour: " + String(eepromSchedule.myTimeSchedule[i].hour));
+        //Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].minute: " + String(eepromSchedule.myTimeSchedule[i].minute));
     }
   }
   PrintSprinklerSchedule("eepromSchedule", eepromSchedule);
@@ -375,7 +364,7 @@ void setupAlarms() {
   }
 
 void handleClientRequests() {
-  Serial.println("start handleClientRequests()");
+  Serial.println("handleClientRequests");
   WiFiClient client = server.available();
   if (client) {
     Serial.println("New client connected");
@@ -422,7 +411,6 @@ void handleGetRequest(String command, JSONVar& responseObj) {
       arduinoCommandError = 1;
   }
     uint8_t sprinklerStateInt = digitalRead(relayPin);
-    Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
     uint8_t daysoftheweek = 0x00;
     for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
       // replace with 2 to the power of n
@@ -451,10 +439,8 @@ void handleGetRequest(String command, JSONVar& responseObj) {
         default:
           break;
       }
-      Serial.println("handleGetRequest->daysoftheweek: " + String(daysoftheweek));
     }
       sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
-      Serial.println("handleGetRequest->sprinklerStateInt: " + String(sprinklerStateInt));
       sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d::%01d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, arduinoCommandError);
       responseObj["status"] = hiTimeStamp;
 }
@@ -594,21 +580,17 @@ bool PrintCurrentTime() {
 }
 
 void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule) {
-  Serial.println("PrintSprinklerSchedule()->scheduleName: " + scheduleName);
-  Serial.print("\tzones: ");
-  Serial.println(theSchedule.zones);
-  Serial.print("\tdurationMinutes: ");
-  Serial.println(theSchedule.durationMinutes);
-  Serial.print("\tnumberOfTimeSchedules: ");
-  Serial.println(theSchedule.numberOfTimeSchedules);
+  char params[256];
+  sprintf(params, "PrintSprinklerSchedule()->scheduleName: <%s>::zones: <%d>::durationMinutes: <%d>::numberOfTimeSchedules: <%d>", scheduleName, theSchedule.zones, theSchedule.durationMinutes, theSchedule.numberOfTimeSchedules);
+  Serial.println(params);
   PrintSprinklerTimeSchedule(theSchedule, theSchedule.numberOfTimeSchedules);
 }
 
 void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules) {
-  Serial.println("\tPrintSprinklerTimeSchedule()->numSchedules: " + String(numSchedules));
+  Serial.println("PrintSprinklerTimeSchedule()->numSchedules: " + String(numSchedules));
   char theTime[6];
   for (int i = 0; i < numSchedules; i++) {
-      Serial.print("\t\tdayOfTheWeek: ");
+      Serial.print("\tdayOfTheWeek: ");
       Serial.print(aSchedule.myTimeSchedule[i].dayOfTheWeek);
       Serial.print(", Time: ");
       sprintf(theTime, "%02d:%02d", aSchedule.myTimeSchedule[i].hour, aSchedule.myTimeSchedule[i].minute);
@@ -719,7 +701,7 @@ void eepromDump(int maxAddress) {
   uint8_t value = 0;
   for (int i = 0; i <= maxAddress; i++) {
     value = EEPROM.read(i);
-    Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
+    // Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
   }
 }
 
@@ -970,10 +952,8 @@ void parse_timeapi(JSONVar myObject) {
 }
 
 void getSetNTPTime() {
-  int offsetUTC = 0;
-  char sprintfBuffer[128];
-
   Serial.println("getting NTP date and time ...");
+  int offsetUTC = 0;
   WiFiUDP ntpUDP;
   NTPClient ntpClient(ntpUDP, "time.google.com", 3600 * -4);  // UTC offset in seconds
   delay(2048);
@@ -981,35 +961,22 @@ void getSetNTPTime() {
   delay(1024);
   ntpClient.update();
   delay(1024);
-  sprintf(sprintfBuffer, "getSetNTPTime->(offset=%d)->ntpClient.getFormattedTime(): %s", offsetUTC, ntpClient.getFormattedTime());
-  Serial.println(sprintfBuffer);
-  //Serial.println(ntpClient.getFormattedTime());
-
   unsigned long t = (unsigned long)0;
   int theMonth = (int)0;
   int theYear = (int)0;
   while ((t <= 0) || (theYear < 2024)) {
     t = ntpClient.getEpochTime();
     delay(2048);
-    Serial.print("getSetNTPTime->t: ");
-    Serial.println(t);
     // correct for daylight savings time
     theMonth = month(t);
     theYear = year(t);
-    Serial.print("getSetNTPTime->theMonth: ");
-    Serial.println(theMonth);
-    Serial.print("getSetNTPTime->theYear: ");
-    Serial.println(theYear);
   }
-  
   offsetUTC = (theMonth >= 3 && theMonth <= 11) ? (3600 * -4) : (3600 * -5);
   ntpClient.setTimeOffset(offsetUTC);
   ntpClient.update();
   delay(1024);
   t = ntpClient.getEpochTime();
   delay(1024);
-  sprintf(sprintfBuffer, "getSetNTPTime->(offset=%d)->ntpClient.getFormattedTime(): %s", offsetUTC, ntpClient.getFormattedTime());
-  Serial.println(sprintfBuffer);
   setTime(t);
   ntpClient.end();
 }
