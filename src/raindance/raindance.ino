@@ -58,9 +58,6 @@ address   type        description of value
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-#include <ArduinoOTA.h>
-#include <WebSocketsServer.h>
-
 // EEPROM settings
 #define EEPROM_SIZE 128
 
@@ -161,7 +158,6 @@ void parse_worldtimeapi(JSONVar myObject);
 void parse_worldclockapi(JSONVar myObject);
 void parse_timeapi(JSONVar myObject);
 timeDayOfWeek_t convertInt2DOW(int value);
-void report2WebSocketClient();
 void checkCLI();
 
 // WiFi settings
@@ -195,12 +191,8 @@ const int ___red_led_pin = 14;  // pin for red LED problem patterns
 const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
 const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water flowing
 
-WebSocketsServer myWebSocketServer = WebSocketsServer(81);  // WebSocket server on port 81
-uint8_t wsNum = (uint8_t)0;
-
 char hiTimeStamp[25];
 bool isScheduleValid = false;
-bool isWebSocketConnected = false;
 
 void setup() {
   setupSerial();
@@ -246,14 +238,7 @@ void setup() {
   pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   pulseLED(_green_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
-  Serial.println("setup->beginning OTA ...");
-  ArduinoOTA.setPassword("Kirtan7&04");
-  ArduinoOTA.begin();
   delay(APP_GRN_DELAY);
-  
-  // Start the WebSocket server
-  //myWebSocketServer.begin();
-  //myWebSocketServer.onEvent(webSocketEvent);  // Define callback function
 }
 
 
@@ -276,20 +261,7 @@ void loop() {
   Serial.println("loop->checkCLI");
   checkCLI();
 
-  Serial.println("loop->ArduinoOTA.handle");
-  ArduinoOTA.handle();
-
   delay(APP_ORN_DELAY);
-
-  //Serial.println("loop->myWebSocketServer.loop");
-  //myWebSocketServer.loop();
-
-  delay(APP_ORN_DELAY);
-
-  Serial.println("loop->if (isWebSocketConnected){report2WebSocketClient}");
-  if (isWebSocketConnected) {
-    report2WebSocketClient();
-  }
 }
 
 void setupSerial() {
@@ -1054,39 +1026,3 @@ void reportRelayState() {
     Serial.println("relay is OFF");
   };
 }
-
-void report2WebSocketClient() {
-  if (myWebSocketServer.clientIsConnected(wsNum)) {
-    Serial.println("report2WebSocketClient->client is connected ...");
-    // isScheduleValid
-    // sprinkler ON status
-    // timestamp
-    String schedStr = "Schedule is " + String(isScheduleValid ? "valid" : "NOT valid") + " ...";
-    myWebSocketServer.sendTXT(wsNum, schedStr);
-  } else {
-    Serial.println("report2WebSocketClient->client is NOT connected ...");
-  }
-}
-
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-  wsNum = num;
-  switch(type) {
-      case WStype_DISCONNECTED:
-          Serial.printf("WEBSOCKETEVENT->[%u] Disconnected!\n", num);
-          myWebSocketServer.disableHeartbeat();
-          isWebSocketConnected = false;
-          break;
-      case WStype_CONNECTED:
-          Serial.printf("WEBSOCKETEVENT->[%u] Connected!\n", num);
-          myWebSocketServer.enableHeartbeat(1024, 1024, 8);
-          myWebSocketServer.sendTXT(num, "Hello from ESP32!");
-          isWebSocketConnected = true;
-          wsNum = num;
-          break;
-      case WStype_TEXT:
-          Serial.printf("WEBSOCKETEVENT->[%u] Received: %s\n", num, payload);
-          myWebSocketServer.sendTXT(num, "Message received");
-          break;
-  }
-}
-
