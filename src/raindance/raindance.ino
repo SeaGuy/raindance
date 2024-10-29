@@ -159,6 +159,10 @@ void parse_worldclockapi(JSONVar myObject);
 void parse_timeapi(JSONVar myObject);
 timeDayOfWeek_t convertInt2DOW(int value);
 void checkCLI();
+void memCheck();
+bool validateTime();
+void getCurrentTimestamp();
+void statusCheck();
 
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
@@ -192,7 +196,12 @@ const int _green_led_pin = 15;  // pin for green LED indicates heartbeat sent
 const int __blue_led_pin = 16;  // pin for blue LED indicates sprinkler on water flowing
 
 char hiTimeStamp[25];
-bool isScheduleValid = false;
+
+// status variables for iPhone reporting
+uint8_t isScheduleInvalid = (uint8_t)1;
+uint8_t isHeapMemLow = (uint8_t)1;
+uint8_t isTimeStampNotSet = (uint8_t)1;
+uint8_t isRSSIWeak = (uint8_t)1;
 
 void setup() {
   setupSerial();
@@ -211,21 +220,17 @@ void setup() {
   delay(APP_GRN_DELAY);
   server.begin();
   delay(APP_GRN_DELAY);
-  getSetNTPTime();
-  delay(APP_GRN_DELAY);
-  if (!PrintCurrentTime()) {
-    GetSetCurrentTime();
-  }
+  getCurrentTimestamp();
   delay(APP_GRN_DELAY);
   eepromDump(EEPROM_MAX_ADDRESS);
   delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
   if (validateSchedule(mySprinklerSchedule)) {
     Serial.println("setup->validateSchedule->schedule is valid ...");
-    isScheduleValid = true;
+    isScheduleInvalid = 0;
   } else {
       Serial.println("setup->validateSchedule->schedule is not valid ...");
-      isScheduleValid = false;
+      isScheduleInvalid = 1;
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(APP_GRN_DELAY);
@@ -244,12 +249,12 @@ void setup() {
 void loop() {
   Alarm.delay(1000); // needed to activate alarms
   handleClientRequests();
-  if (!PrintCurrentTime()) {
-    pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
-  }
+  if (validateTime()) { PrintCurrentTime(); } else { getCurrentTimestamp(); }
   reportRelayState();
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   checkCLI();
+  memCheck();
+  statusCheck();
   delay(APP_ORN_DELAY);
 }
 
@@ -285,6 +290,7 @@ void connectToWiFi() {
     Serial.println(WiFi.localIP());
     // print the received signal strength:
     long rssi = WiFi.RSSI();
+    isRSSIWeak = (rssi <= (long)-80) ? (uint8_t)1 : (uint8_t)0;
     Serial.print("signal strength (RSSI):");
     Serial.print(rssi);
     Serial.println(" dBm");
@@ -339,28 +345,27 @@ void writeScheduleToEEPROM() {
 }
 
 void setupAlarms() {
+  Serial.println("setupAlarms()");
   // set alarms based on mySprinklerSchedule.myTimeSchedule
   // timeDayOfWeek_t is an enum in TimeLib.h {undefined=0, 1=Sunday, 2=Monday, etc.}
   int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
   int myDayOfTheWeek = -1;
   zones = (int)(mySprinklerSchedule.zones);
-  Serial.println("setupAlarms->numScheds: " + String(numScheds));
-  Serial.println("setupAlarms->clearing alarms ..." );
   clearAlarms();
   for (int i = 0; i < numScheds; i++) {
     int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
     int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
-    Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
-    Serial.println("setupAlarms->hour: " + String(hour));
-    Serial.println("setupAlarms->minute: " + String(minute));
+    //Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
+    //Serial.println("setupAlarms->hour: " + String(hour));
+    //Serial.println("setupAlarms->minute: " + String(minute));
     timeDayOfWeek_t dowEnum = convertInt2DOW(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
     schedAlarmID = Alarm.alarmRepeat(dowEnum, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
-    Serial.println("setupAlarms->adding schedule alarm ID: " + String(schedAlarmID));
+    //Serial.println("setupAlarms->adding schedule alarm ID: " + String(schedAlarmID));
     schedAlarmIDArray[i] = schedAlarmID;
     }
     getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
-    Serial.println("setupAlarms->get-set-time alarm created with ID: " + String(getSetCurrentTimeAlarmID));
+    //Serial.println("setupAlarms->get-set-time alarm created with ID: " + String(getSetCurrentTimeAlarmID));
   }
 
 void handleClientRequests() {
@@ -560,7 +565,7 @@ void ScheduledSprinklerOff() {
 
 bool PrintCurrentTime() {
   bool isTimeSet = false;
-  if (year() != 1970) {
+  if (validateTime()) {
     char timestamp[20]; // Array to hold the formatted timestamp
     int y = year();
     int m = month();
@@ -574,7 +579,7 @@ bool PrintCurrentTime() {
     Serial.println(timestamp);
     isTimeSet = true;
   } else {
-    Serial.println("Time is NOT Set!");
+    Serial.println("Current time: TIME IS NOT SET!");
   }
   return isTimeSet;
 }
@@ -600,7 +605,7 @@ void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules) {
 }
 
 void GetSetCurrentTime() {
-  Serial.println("Getting and setting current time");
+  Serial.println("GetSetCurrentTime()");
   /*
   httpTimeClient.get(timeServerAPI);
   int statusCode = httpTimeClient.responseStatusCode();
@@ -652,7 +657,6 @@ void writeUint16ToEEPROM(int address, uint16_t value) {
     EEPROM.write(address + 1, value & 0xFF);            // Least significant byte
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address + 1) + "]->value: " + String(value & 0xFF));
     EEPROM.commit(); // Commit changes to EEPROM
-
 }
 
 uint16_t readUint16FromEEPROM(int address) {
@@ -660,7 +664,7 @@ uint16_t readUint16FromEEPROM(int address) {
     uint16_t value = 0;
     value |= ((uint16_t)EEPROM.read(address) << 8);
     value |= (uint16_t)EEPROM.read(address + 1);
-    Serial.println("readUint16FromEEPROM<" + String(address) + ">: " + String(value));
+    //Serial.println("readUint16FromEEPROM<" + String(address) + ">: " + String(value));
     return value;
 }
 
@@ -767,19 +771,20 @@ bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]) {
 }
 
 void clearAlarms() {
+  Serial.println("clearAlarms()");
   // first clear scheduling alarms
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
-    Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
+    //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
   }
   // next clear the get-set-time alarm
-  Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
+  //Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
   Alarm.free(getSetCurrentTimeAlarmID);
-  Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
+  //Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
   Alarm.free(onAlarmID);
-  Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
+  //Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
   Alarm.free(offAlarmID);
-  Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
+  //Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
   Alarm.free(retryGetTimeAlarmID);
 }
 
@@ -891,7 +896,7 @@ void checkCLI() {
             // Set the time using the parsed values
             setTime(hour, minute, second, day, month, year);
             delay(1024);
-            if (PrintCurrentTime()) {
+            if (validateTime()) {
               Serial.println("checkCLI->Time set successfully.");
             } else {
                 Serial.println("checkCLI->Time NOT set successfully.");
@@ -952,7 +957,7 @@ void parse_timeapi(JSONVar myObject) {
 }
 
 void getSetNTPTime() {
-  Serial.println("getting NTP date and time ...");
+  Serial.println("getSetNTPTime()");
   int offsetUTC = 0;
   WiFiUDP ntpUDP;
   NTPClient ntpClient(ntpUDP, "time.google.com", 3600 * -4);  // UTC offset in seconds
@@ -984,8 +989,6 @@ void getSetNTPTime() {
 void reportRelayState() {
   // Read the state of the relay pin
   int relayState = digitalRead(relayPin);
-  Serial.print("relayState: ");
-  Serial.println(relayState);
   if (relayState == HIGH) {
     Serial.println("relay is ON");
     pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
@@ -993,3 +996,44 @@ void reportRelayState() {
     Serial.println("relay is OFF");
   };
 }
+
+void memCheck() {
+  uint32_t myHeapVal = ESP.getFreeHeap();
+  Serial.print("memCheck->Free Heap: ");
+  Serial.println(ESP.getFreeHeap());
+  if (myHeapVal < 0xffff) {  // 65535
+    isHeapMemLow = (uint8_t)1;
+  } else {
+    isHeapMemLow = (uint8_t)0;
+  }
+}
+
+void getCurrentTimestamp() {
+  Serial.println("getCurrentTimestamp()");
+  getSetNTPTime();
+  delay(APP_GRN_DELAY);
+  if (!validateTime()) {
+    GetSetCurrentTime();
+  }
+}
+
+bool validateTime() {
+  bool isValid = false;
+  if (year() != 1970) {
+    isValid = true;
+    isTimeStampNotSet = (uint8_t)0;
+  } else {
+    isValid = false;
+    isTimeStampNotSet = (uint8_t)1;
+    pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  }
+  return isValid;
+}
+
+void statusCheck() {
+  Serial.printf("isScheduleInvalid: [%d]\t", isScheduleInvalid);
+  Serial.printf("isHeapMemLow: [%d]\t", isHeapMemLow);
+  Serial.printf("isTimeStampNotSet: [%d]\t", isTimeStampNotSet);
+  Serial.printf("isRSSIWeak: [%d]\n\r", isRSSIWeak);
+}
+ 
