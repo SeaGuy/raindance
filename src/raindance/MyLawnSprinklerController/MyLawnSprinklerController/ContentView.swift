@@ -23,30 +23,35 @@ struct ContentView: View {
     @State private var showAlert = false  // to limit number of schedule entries
     @State private var timer: Timer? = nil // to send "HI!" command every 60 seconds
     @State private var activeDaysBitfield: Int = 0 // New state variable for the bitfield
-
+    
+    @State private var badSchedule: Bool = false // State to track if the sprinkler is on
+    @State private var badHeapMem_: Bool = false // State to track if the sprinkler is on
+    @State private var badTimeStmp: Bool = false // State to track if the sprinkler is on
+    @State private var badRSSIsign: Bool = false // State to track if the sprinkler is on
+    @State private var badCommand_: Bool = false // State to track if the sprinkler is on
+    
     var body: some View {
         
         VStack {
-            Text("Hello, Monica & Bill!")
-            
             // Sprinkler ON LED
             HStack {
                 Circle()
                     .fill(isSprinklerOn ? Color.green : Color.gray)
-                    .frame(width: 20, height: 20)
+                    .frame(width: 10, height: 10)
                 Text(isSprinklerOn ? "Sprinkler is ON" : "Sprinkler is OFF")
                     .foregroundColor(isSprinklerOn ? Color.green : Color.gray)
                     .opacity(isSprinklerOn && blinkOpacity == 0.0 ? 0.0 : 1.0) // Control opacity based on blinking state
                     .animation(isSprinklerOn ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .none, value: blinkOpacity)  // Start/stop animation based on sprinkler state
             }
-            .padding()
+            //.padding()
             
            
             HStack {
                 Button("ON") {
                     sendCommand(command: "ONN", httpMethod: "GET", params: [:])
                 }
-                .padding()
+                .padding(5)
+                .frame(width: 50, height: 30) // Set a fixed width and height
                 .background(Color.green)
                 .foregroundColor(.white)
                 .cornerRadius(10)
@@ -55,14 +60,13 @@ struct ContentView: View {
                 Button("OFF") {
                     sendCommand(command: "OFF", httpMethod: "GET", params: [:])
                 }
-                .padding()
+                .padding(5)
+                .frame(width: 50, height: 30) // Set a fixed width and height
                 .background(Color.gray)
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .shadow(radius: 5)
             }
-            
-
             
             // Schedule settings and entries inside a bounding box
             GroupBox(label: Label("Schedule Settings", systemImage: "calendar")) {
@@ -78,9 +82,9 @@ struct ContentView: View {
                         }
                     }
                 }
-                .padding()
+                //.padding()
      
-                VStack {
+                VStack(spacing: 8) {
                     Stepper("Number of Zones: \(numberOfZones)", value: $numberOfZones, in: 1...4)
                         .padding([.top, .horizontal])
 
@@ -88,6 +92,7 @@ struct ContentView: View {
                         .padding([.horizontal, .bottom])
 
                     Divider() // Divider between steppers and schedule entries
+                        .padding(.bottom, 4) // Reduce bottom padding to bring it closer to the List
 
                     List {
                         ForEach(schedule) { entry in
@@ -123,10 +128,13 @@ struct ContentView: View {
                             schedule.remove(atOffsets: indexSet)
                         }
                     }
-                    .frame(maxHeight: 300) // Set a maximum height for the List to ensure visibility
+                    .frame(maxHeight: 200) // Set a maximum height for the List to ensure visibility
+                    .padding(.top, 0) // Remove top padding from the List if it's adding extra space
                 }
                 //.padding()
             }
+            
+
             //.padding()
 
             HStack {
@@ -137,7 +145,8 @@ struct ContentView: View {
                         showAlert = true // Trigger the alert
                     }
                 }
-                .padding()
+                .padding(5)
+                .frame(width: 50, height: 30) // Set a fixed width and height
                 .background(Color.gray)
                 .foregroundColor(.white)
                 .cornerRadius(10)
@@ -146,18 +155,57 @@ struct ContentView: View {
                     Alert(title: Text("Limit Reached"), message: Text("You can only add up to 2 schedules."), dismissButton: .default(Text("OK")))
                 }
                 
-                Button("Upload") {
+                Button("Send") {
                     sendSetScheduleCommand()
                 }
-                .padding()
+                .padding(5)
+                .frame(width: 50, height: 30) // Set a fixed width and height
                 .background(Color.gray)
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .shadow(radius: 5)
             }
+            GroupBox(label: Label("uController status", systemImage: "exclamationmark.triangle")) {
+                // Day LEDs
+                HStack {}
+            }
             
         }
-        .padding()
+        HStack {
+            Circle()
+                .fill(badSchedule ? Color.red : Color.green)
+                .frame(width: 10, height: 10)
+            Text("Sched")
+                .foregroundColor(Color.black)
+                .opacity(1.0)
+                //.animation(isSprinklerOn ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .none, value: blinkOpacity)  // Start/stop animation based on sprinkler state
+            Circle()
+                .fill(badHeapMem_ ? Color.red : Color.green)
+                .frame(width: 10, height: 10)
+            Text("Heap")
+                .foregroundColor(Color.black)
+                .opacity(1.0)
+            Circle()
+                .fill(badTimeStmp ? Color.red : Color.green)
+                .frame(width: 10, height: 10)
+            Text("Time")
+                .foregroundColor(Color.black)
+                .opacity(1.0)
+            Circle()
+                .fill(badRSSIsign ? Color.red : Color.green)
+                .frame(width: 10, height: 10)
+            Text("RSSI")
+                .foregroundColor(Color.black)
+                .opacity(1.0)
+            Circle()
+                .fill(badCommand_ ? Color.red : Color.green)
+                .frame(width: 10, height: 10)
+            Text("Cmd")
+                .foregroundColor(Color.black)
+                .opacity(1.0)
+        }
+        
+        .padding(.top, -20) // Use a negative top padding to pull content up
         
         .onAppear {
             // Send the "HI!" command when ContentView appears
@@ -220,12 +268,17 @@ struct ContentView: View {
             let year = String(status.prefix(4))
             // let bitfieldValue = status.dropFirst(21) // Get the bitfield value as a substring
 
-            let startIndex = status.index(status.startIndex, offsetBy: 21)
-            let endIndex = status.index(startIndex, offsetBy: 3)
+            var startIndex = status.index(status.startIndex, offsetBy: 21)
+            var endIndex = status.index(startIndex, offsetBy: 3)
             let onoffBitfieldValue = status[startIndex..<endIndex]
             
-
+            startIndex = status.index(status.startIndex, offsetBy: 26)
+            endIndex = status.index(startIndex, offsetBy: 3)
+            let arduinoStatusWord = status[startIndex..<endIndex]
+            
             print("onoffBitfieldValue: \(onoffBitfieldValue)")
+            print("arduinoStatusWord: \(arduinoStatusWord)")
+            
             if let uint16Value = UInt16(onoffBitfieldValue) {
                 print("uint16Value \(uint16Value)")
                 var onoffstatus: Int = Int(uint16Value & 0x80)
@@ -234,28 +287,43 @@ struct ContentView: View {
                 print("bitfield: \(bitfield)")
                 onoffstatus = onoffstatus>>7 & 0x01
                 print("onoffstatus: \(onoffstatus)")
-
-                // Right-shift the value by 1 bit
-                //let shiftedValue = Int(uint16Value >> 1)
-                //print("The shifted value is \(shiftedValue)")
-                // Convert the bitfieldValue to an integer
-                //if let bitfield = shiftedValue as? Int {
-                    DispatchQueue.main.async {
-                        activeDaysBitfield = bitfield
-                    }
-                //let lastCharacter = status.last
-                
-               
+                DispatchQueue.main.async {
+                    activeDaysBitfield = bitfield
+                }
                 // Update the Sprinkler ON LED based on the last character
                 DispatchQueue.main.async {
                     //isSprinklerOn = (lastCharacter == "1")
                     isSprinklerOn = (onoffstatus == 1)
-
                 }
-                //}
             } else {
                 print("Conversion failed. The string does not represent a valid UInt16 value.")
             }
+            
+            if let uint8Value = UInt8(arduinoStatusWord) {
+                print("uint8Value \(uint8Value)")
+                let isScheduleInvalid: Int = Int(uint8Value & 0x01)
+                let isHeapMemLow: Int = Int(uint8Value>>1 & 0x01)
+                let isTimeStampNotSet: Int = Int(uint8Value>>2 & 0x01)
+                let arduinoCommandError: Int = Int(uint8Value>>3 & 0x01)
+                let isRSSIWeak: Int = Int(uint8Value>>4 & 0x01)
+                
+                print("isScheduleInvalid: \(isScheduleInvalid)")
+                print("isHeapMemLow: \(isHeapMemLow)")
+                print("isTimeStampNotSet: \(isTimeStampNotSet)")
+                print("arduinoCommandError: \(arduinoCommandError)")
+                print("isRSSIWeak: \(isRSSIWeak)")
+                
+                badSchedule = (isScheduleInvalid == 1) ? true : false
+                badHeapMem_ = (isHeapMemLow == 1) ? true : false
+                badTimeStmp = (isTimeStampNotSet == 1) ? true : false
+                badRSSIsign = (arduinoCommandError == 1) ? true : false
+                badCommand_ = (isRSSIWeak == 1) ? true : false
+                
+            } else {
+                print("Conversion failed. The string does not represent a valid UInt8 value.")
+            }
+            
+            
             if year == "1970" {
                 // If the year is "1970", call the functions to send the current date and time
                 sendDateTimeToArduino { response in

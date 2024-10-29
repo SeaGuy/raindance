@@ -163,6 +163,7 @@ void memCheck();
 bool validateTime();
 void getCurrentTimestamp();
 void statusCheck();
+uint8_t generateStatusWord();
 
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
@@ -202,6 +203,7 @@ uint8_t isScheduleInvalid = (uint8_t)1;
 uint8_t isHeapMemLow = (uint8_t)1;
 uint8_t isTimeStampNotSet = (uint8_t)1;
 uint8_t isRSSIWeak = (uint8_t)1;
+uint8_t arduinoCommandError = (uint8_t)1;
 
 void setup() {
   setupSerial();
@@ -255,7 +257,7 @@ void loop() {
   checkCLI();
   memCheck();
   statusCheck();
-  delay(APP_ORN_DELAY);
+  delay(APP_YEL_DELAY);
 }
 
 void setupSerial() {
@@ -403,8 +405,9 @@ void handleClientRequests() {
 
 void handleGetRequest(String command, JSONVar& responseObj) {
   Serial.println("handleGetRequest->Processing GET request with command: " + command);
+  char outputBuffer[128];
   pulseLED(_green_led_pin, 1, LED_SHORT_BURST_MILLISECONDS);
-  uint8_t arduinoCommandError = 0;
+  arduinoCommandError = 0;
   if (command == "ONN") {
     digitalWrite(relayPin, HIGH);
   } else if (command == "OFF") {
@@ -446,7 +449,11 @@ void handleGetRequest(String command, JSONVar& responseObj) {
       }
     }
       sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
-      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d::%01d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, arduinoCommandError);
+      uint8_t myStatus = generateStatusWord();
+      Serial.println("myStatus: " + String(myStatus));
+      sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d::%03d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, myStatus);
+      sprintf(outputBuffer, "hiTimeStamp: %s", hiTimeStamp);
+      Serial.println(outputBuffer);
       responseObj["status"] = hiTimeStamp;
 }
 
@@ -1034,6 +1041,19 @@ void statusCheck() {
   Serial.printf("isScheduleInvalid: [%d]\t", isScheduleInvalid);
   Serial.printf("isHeapMemLow: [%d]\t", isHeapMemLow);
   Serial.printf("isTimeStampNotSet: [%d]\t", isTimeStampNotSet);
-  Serial.printf("isRSSIWeak: [%d]\n\r", isRSSIWeak);
+  Serial.printf("arduinoCommandError: [%d]\t", arduinoCommandError);
+  long rssi = WiFi.RSSI();
+  isRSSIWeak = (rssi <= (long)-80) ? (uint8_t)1 : (uint8_t)0;
+  Serial.printf("isRSSI(%d)Weak: [%d]\n\r", rssi, isRSSIWeak);
+}
+
+uint8_t generateStatusWord() {
+  uint8_t arduinoStatusWord = (uint8_t)0;
+  arduinoStatusWord = arduinoStatusWord | isScheduleInvalid;                       // bit 0
+  arduinoStatusWord = arduinoStatusWord | isHeapMemLow<<1;            // bit 1
+  arduinoStatusWord = arduinoStatusWord | isTimeStampNotSet<<2;       // bit 2
+  arduinoStatusWord = arduinoStatusWord | isRSSIWeak<<3;              // bit 3
+  arduinoStatusWord = arduinoStatusWord | arduinoCommandError<<4;     // bit 4
+  return arduinoStatusWord;
 }
  
