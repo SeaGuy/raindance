@@ -58,6 +58,8 @@ address   type        description of value
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
+// #define DEBUG
+
 // EEPROM settings
 #define EEPROM_SIZE 128
 
@@ -206,7 +208,9 @@ uint8_t isRSSIWeak = (uint8_t)1;
 uint8_t arduinoCommandError = (uint8_t)1;
 
 void setup() {
-  setupSerial();
+  #ifdef DEBUG
+    setupSerial();
+  #endif
   delay(APP_GRN_DELAY);
   setupRelay();
   delay(APP_GRN_DELAY);
@@ -216,7 +220,9 @@ void setup() {
   wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
   // Initialize EEPROM
   if (!EEPROM.begin(EEPROM_SIZE)) {
-    Serial.println("Failed to initialise EEPROM");
+    #ifdef DEBUG
+      Serial.println("Failed to initialise EEPROM");
+    #endif
     return;
   }
   delay(APP_GRN_DELAY);
@@ -228,10 +234,14 @@ void setup() {
   delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
   if (validateSchedule(mySprinklerSchedule)) {
-    Serial.println("setup->validateSchedule->schedule is valid ...");
+    #ifdef DEBUG
+      Serial.println("setup->validateSchedule->schedule is valid ...");
+    #endif
     isScheduleInvalid = 0;
   } else {
-      Serial.println("setup->validateSchedule->schedule is not valid ...");
+      #ifdef DEBUG
+        Serial.println("setup->validateSchedule->schedule is not valid ...");
+      #endif
       isScheduleInvalid = 1;
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
@@ -272,33 +282,45 @@ void setupSerial() {
 
 void setupRelay() {
   pinMode(relayPin, OUTPUT);
-  Serial.println("Configuring digital output pin for relay");
+  #ifdef DEBUG
+    Serial.println("Configuring digital output pin for relay");
+  #endif
   digitalWrite(relayPin, LOW);
 }
 
 void connectToWiFi() {
-  Serial.print("Connecting to SSID: ");
-  Serial.println(ssid);
+  #ifdef DEBUG
+    Serial.print("Connecting to SSID: ");
+    Serial.println(ssid);
+  #endif
   WiFi.begin(ssid, password);
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    Serial.print(".");
+    #ifdef DEBUG
+      Serial.print(".");
+    #endif
     delay(1000);
     attempts++;
   }
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
-    Serial.print("Connected to WiFi with address ");
-    Serial.println(WiFi.localIP());
+    #ifdef DEBUG
+      Serial.println();
+      Serial.print("Connected to WiFi with address ");
+      Serial.println(WiFi.localIP());
+    #endif
     // print the received signal strength:
     long rssi = WiFi.RSSI();
     isRSSIWeak = (rssi <= (long)-80) ? (uint8_t)1 : (uint8_t)0;
-    Serial.print("signal strength (RSSI):");
-    Serial.print(rssi);
-    Serial.println(" dBm");
+    #ifdef DEBUG
+      Serial.print("signal strength (RSSI):");
+      Serial.print(rssi);
+      Serial.println(" dBm");
+    #endif
   } else {
-    Serial.println();
-    Serial.println("Failed to connect to WiFi");
+    #ifdef DEBUG
+      Serial.println();
+      Serial.println("Failed to connect to WiFi");
+    #endif
   }
 }
 
@@ -312,9 +334,6 @@ void getScheduleFromEEPROM() {
   eepromSchedule.zones = numZones;
   eepromSchedule.durationMinutes = numMinutes;
   eepromSchedule.numberOfTimeSchedules = numScheds;
-  //Serial.println("getScheduleFromEEPROM->numZones in EEPROM: " + String(numZones));
-  //Serial.println("getScheduleFromEEPROM->numMinutes in EEPROM: " + String(numMinutes));
-  //Serial.println("getScheduleFromEEPROM->numScheds in EEPROM: " + String(numScheds));
   if (numScheds >= 1) {
     for (int i = 0; i <= ((int)numScheds - 1); i++) { 
         value = readUint16FromEEPROM(EEPROM_ADDR_FIRST_SCHED + (2 * i));
@@ -322,9 +341,6 @@ void getScheduleFromEEPROM() {
         uint16_t hourMinBits = (uint16_t)((value >> 3) & 0x07FF);
         eepromSchedule.myTimeSchedule[i].hour = (uint8_t)(hourMinBits / 60); // divide by 60 minutes;
         eepromSchedule.myTimeSchedule[i].minute = (uint8_t)(hourMinBits % 60); // modulus after divide by 60 minutes
-        //Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].dayOfTheWeek: " + String(eepromSchedule.myTimeSchedule[i].dayOfTheWeek));
-        //Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].hour: " + String(eepromSchedule.myTimeSchedule[i].hour));
-        //Serial.println("getScheduleFromEEPROM->eepromSchedule.myTimeSchedule[i=" + String(i) + "].minute: " + String(eepromSchedule.myTimeSchedule[i].minute));
     }
   }
   PrintSprinklerSchedule("eepromSchedule", eepromSchedule);
@@ -332,7 +348,9 @@ void getScheduleFromEEPROM() {
 }
 
 void writeScheduleToEEPROM() {
-  Serial.println("writeScheduleToEEPROM");
+  #ifdef DEBUG
+    Serial.println("writeScheduleToEEPROM");
+  #endif
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);  
   EEPROM.write(EEPROM_ADDR_NUM_ZONES, mySprinklerSchedule.zones & 0xFF);
   EEPROM.write(EEPROM_ADDR_NUM_MINUTES, mySprinklerSchedule.durationMinutes & 0xFF);
@@ -340,14 +358,18 @@ void writeScheduleToEEPROM() {
   for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
     TimeSchedule myTimeSchedule = mySprinklerSchedule.myTimeSchedule[i];
     uint16_t myBitField = createSprinklerTimeScheduleBitfield(myTimeSchedule);
-    Serial.println("writeScheduleToEEPROM->mySprinklerSchedule.myTimeSchedule[" + String(i) + "]->myBitField: " + String(myBitField));
+    #ifdef DEBUG
+      Serial.println("writeScheduleToEEPROM->mySprinklerSchedule.myTimeSchedule[" + String(i) + "]->myBitField: " + String(myBitField));
+    #endif
     writeUint16ToEEPROM(EEPROM_ADDR_FIRST_SCHED + (i * 2), myBitField);
   }
   EEPROM.commit(); // Commit changes to EEPROM
 }
 
 void setupAlarms() {
-  Serial.println("setupAlarms()");
+  #ifdef DEBUG
+    Serial.println("setupAlarms()");
+  #endif
   // set alarms based on mySprinklerSchedule.myTimeSchedule
   // timeDayOfWeek_t is an enum in TimeLib.h {undefined=0, 1=Sunday, 2=Monday, etc.}
   int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
@@ -358,26 +380,27 @@ void setupAlarms() {
     int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
     int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
-    //Serial.println("setupAlarms->dayOfTheWeek: " + String(dayOfTheWeek));
-    //Serial.println("setupAlarms->hour: " + String(hour));
-    //Serial.println("setupAlarms->minute: " + String(minute));
     timeDayOfWeek_t dowEnum = convertInt2DOW(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
     schedAlarmID = Alarm.alarmRepeat(dowEnum, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
-    //Serial.println("setupAlarms->adding schedule alarm ID: " + String(schedAlarmID));
     schedAlarmIDArray[i] = schedAlarmID;
     }
     getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
-    //Serial.println("setupAlarms->get-set-time alarm created with ID: " + String(getSetCurrentTimeAlarmID));
   }
 
 void handleClientRequests() {
-  Serial.println("handleClientRequests");
+  #ifdef DEBUG
+    Serial.println("handleClientRequests");
+  #endif
   WiFiClient client = server.available();
   if (client) {
-    Serial.println("New client connected");
+    #ifdef DEBUG
+      Serial.println("New client connected");
+    #endif
     String requestData = client.readStringUntil('\n');
     requestData.trim();  // Remove any extra whitespace
-    Serial.println("Received: " + requestData);
+    #ifdef DEBUG
+      Serial.println("Received: " + requestData);
+    #endif
     JSONVar responseObj;
     if (requestData.startsWith("GET")) {
       String command = requestData.substring(5, 8);
@@ -398,13 +421,17 @@ void handleClientRequests() {
     delay(1024);
     client.stop();
   } else {
-    Serial.println("No WiFi client connected");
+    #ifdef DEBUG
+      println("No WiFi client connected");
+    #endif
     delay(1024);
   }
 }
 
 void handleGetRequest(String command, JSONVar& responseObj) {
-  Serial.println("handleGetRequest->Processing GET request with command: " + command);
+  #ifdef DEBUG
+    Serial.println("handleGetRequest->Processing GET request with command: " + command);
+  #endif
   char outputBuffer[128];
   pulseLED(_green_led_pin, 1, LED_SHORT_BURST_MILLISECONDS);
   arduinoCommandError = 0;
@@ -450,17 +477,25 @@ void handleGetRequest(String command, JSONVar& responseObj) {
     }
       sprinklerStateInt = (sprinklerStateInt<<7) | daysoftheweek;
       uint8_t myStatus = generateStatusWord();
-      Serial.println("myStatus: " + String(myStatus));
+      #ifdef DEBUG
+        Serial.println("myStatus: " + String(myStatus));
+      #endif
       sprintf(hiTimeStamp, "%04d-%02d-%02dT%02d:%02d:%02d::%03d::%03d", year(), month(), day(), hour(), minute(), second(), sprinklerStateInt, myStatus);
       sprintf(outputBuffer, "hiTimeStamp: %s", hiTimeStamp);
-      Serial.println(outputBuffer);
+      #ifdef DEBUG
+        Serial.println(outputBuffer);
+      #endif
       responseObj["status"] = hiTimeStamp;
 }
 
 void handlePostRequest(WiFiClient& client, JSONVar& responseObj) {
-  Serial.println("handlePostRequest()");
+  #ifdef DEBUG
+    Serial.println("handlePostRequest()");
+  #endif
   String jsonString = readJsonBody(client);
-  Serial.println("handlePostRequest->Extracted JSON: " + jsonString);
+  #ifdef DEBUG
+    Serial.println("handlePostRequest->Extracted JSON: " + jsonString);
+  #endif
   JSONVar parsedData = JSON.parse(jsonString);
   if (JSON.typeof(parsedData) == "undefined") {
     Serial.println("handlePostRequest->Parsing input failed!");
