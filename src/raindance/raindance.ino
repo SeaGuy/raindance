@@ -58,7 +58,7 @@ address   type        description of value
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-// #define DEBUG
+// #define DEBUG // *********** TURN ON/OFF SERIAL LOGGING
 
 // EEPROM settings
 #define EEPROM_SIZE 128
@@ -422,7 +422,7 @@ void handleClientRequests() {
     client.stop();
   } else {
     #ifdef DEBUG
-      println("No WiFi client connected");
+      Serial.println("No WiFi client connected");
     #endif
     delay(1024);
   }
@@ -616,12 +616,16 @@ bool PrintCurrentTime() {
     int min = minute();
     int s = second();
     // Create a timestamp in the format "YYYY-MM-DD HH:MM:SS"
-    sprintf(timestamp, "%04d-%02d-%02dT%02d:%02d:%02d", y, m, d, h, min, s);
-    Serial.print("Current time: ");
-    Serial.println(timestamp);
+    #ifdef DEBUG
+      sprintf(timestamp, "%04d-%02d-%02dT%02d:%02d:%02d", y, m, d, h, min, s);
+      Serial.print("Current time: ");
+      Serial.println(timestamp);
+    #endif
     isTimeSet = true;
   } else {
-    Serial.println("Current time: TIME IS NOT SET!");
+      #ifdef DEBUG
+        Serial.println("Current time: TIME IS NOT SET!");
+      #endif
   }
   return isTimeSet;
 }
@@ -629,21 +633,26 @@ bool PrintCurrentTime() {
 void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule) {
   char params[256];
   sprintf(params, "PrintSprinklerSchedule()->scheduleName: <%s>::zones: <%d>::durationMinutes: <%d>::numberOfTimeSchedules: <%d>", scheduleName, theSchedule.zones, theSchedule.durationMinutes, theSchedule.numberOfTimeSchedules);
-  Serial.println(params);
+  #ifdef DEBUG
+    Serial.println(params);
+  #endif
+      
   PrintSprinklerTimeSchedule(theSchedule, theSchedule.numberOfTimeSchedules);
 }
 
 void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules) {
-  Serial.println("PrintSprinklerTimeSchedule()->numSchedules: " + String(numSchedules));
-  char theTime[6];
-  for (int i = 0; i < numSchedules; i++) {
-      Serial.print("\tdayOfTheWeek: ");
-      Serial.print(aSchedule.myTimeSchedule[i].dayOfTheWeek);
-      Serial.print(", Time: ");
-      sprintf(theTime, "%02d:%02d", aSchedule.myTimeSchedule[i].hour, aSchedule.myTimeSchedule[i].minute);
-      Serial.print(theTime);
-      Serial.println();
-  }
+  #ifdef DEBUG
+    Serial.println("PrintSprinklerTimeSchedule()->numSchedules: " + String(numSchedules));
+    char theTime[6];
+    for (int i = 0; i < numSchedules; i++) {
+        Serial.print("\tdayOfTheWeek: ");
+        Serial.print(aSchedule.myTimeSchedule[i].dayOfTheWeek);
+        Serial.print(", Time: ");
+        sprintf(theTime, "%02d:%02d", aSchedule.myTimeSchedule[i].hour, aSchedule.myTimeSchedule[i].minute);
+        Serial.print(theTime);
+        Serial.println();
+    }
+  #endif
 }
 
 void GetSetCurrentTime() {
@@ -793,7 +802,9 @@ bool validateSchedule(SprinklerSchedule aSprinklerSchedule) {
 
 bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]) {
   bool valid = false;
-  Serial.println("timeScheduleValidated->numScheds: " + String(numScheds));
+  #ifdef DEBUG
+    Serial.println("timeScheduleValidated->numScheds: " + String(numScheds));
+  #endif
   if ((numScheds >= 1) && (numScheds <= MAX_NUM_SCHEDS)) {
     for (int i = 0; i < numScheds; i++) {
       if (  (theTimeSchedule[i].dayOfTheWeek >= 0) && (theTimeSchedule[i].dayOfTheWeek <= 6) &&
@@ -813,7 +824,9 @@ bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]) {
 }
 
 void clearAlarms() {
-  Serial.println("clearAlarms()");
+  #ifdef DEBUG
+    Serial.println("clearAlarms()");
+  #endif
   // first clear scheduling alarms
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
     //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
@@ -879,9 +892,11 @@ timeDayOfWeek_t convertInt2DOW(int value) {
 void pulseLED(int theLED, int numberPulses, int duration) {
   char theArgs[64];
   digitalWrite(theLED, HIGH);
-  sprintf(theArgs, "theLED: %02d;  numberPulses: %02d;  duration(ms): %04d", theLED, numberPulses, duration);
-  Serial.print("pulseLED->theArgs: ");
-  Serial.println(theArgs);
+  #ifdef DEBUG
+    sprintf(theArgs, "theLED: %02d;  numberPulses: %02d;  duration(ms): %04d", theLED, numberPulses, duration);
+    Serial.print("pulseLED->theArgs: ");
+    Serial.println(theArgs);
+  #endif
   for (int i = 0; i < numberPulses; i++) {
     digitalWrite(theLED, LOW);
     delay(duration);
@@ -913,7 +928,9 @@ void onboardLED_OFF(int theLED) {
 
 
 void checkCLI() {
-  Serial.println("checkCLI");
+  #ifdef DEBUG
+    Serial.println("checkCLI");
+  #endif
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n');
 
@@ -999,7 +1016,9 @@ void parse_timeapi(JSONVar myObject) {
 }
 
 void getSetNTPTime() {
-  Serial.println("getSetNTPTime()");
+  #ifdef DEBUG
+    Serial.println("getSetNTPTime()");
+  #endif
   int offsetUTC = 0;
   WiFiUDP ntpUDP;
   NTPClient ntpClient(ntpUDP, "time.google.com", 3600 * -4);  // UTC offset in seconds
@@ -1032,17 +1051,23 @@ void reportRelayState() {
   // Read the state of the relay pin
   int relayState = digitalRead(relayPin);
   if (relayState == HIGH) {
-    Serial.println("relay is ON");
+    #ifdef DEBUG
+      Serial.println("relay is ON");
+    #endif
     pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   } else {
-    Serial.println("relay is OFF");
+      #ifdef DEBUG
+        Serial.println("relay is OFF");
+      #endif
   };
 }
 
 void memCheck() {
   uint32_t myHeapVal = ESP.getFreeHeap();
-  Serial.print("memCheck->Free Heap: ");
-  Serial.println(ESP.getFreeHeap());
+  #ifdef DEBUG
+    Serial.print("memCheck->Free Heap: ");
+    Serial.println(ESP.getFreeHeap());
+  #endif
   if (myHeapVal < 0xffff) {  // 65535
     isHeapMemLow = (uint8_t)1;
   } else {
@@ -1051,7 +1076,9 @@ void memCheck() {
 }
 
 void getCurrentTimestamp() {
-  Serial.println("getCurrentTimestamp()");
+  #ifdef DEBUG
+    Serial.println("getCurrentTimestamp()");
+  #endif
   getSetNTPTime();
   delay(APP_GRN_DELAY);
   if (!validateTime()) {
@@ -1073,13 +1100,15 @@ bool validateTime() {
 }
 
 void statusCheck() {
-  Serial.printf("isScheduleInvalid: [%d]\t", isScheduleInvalid);
-  Serial.printf("isHeapMemLow: [%d]\t", isHeapMemLow);
-  Serial.printf("isTimeStampNotSet: [%d]\t", isTimeStampNotSet);
-  Serial.printf("arduinoCommandError: [%d]\t", arduinoCommandError);
-  long rssi = WiFi.RSSI();
-  isRSSIWeak = (rssi <= (long)-80) ? (uint8_t)1 : (uint8_t)0;
-  Serial.printf("isRSSI(%d)Weak: [%d]\n\r", rssi, isRSSIWeak);
+  #ifdef DEBUG
+    Serial.printf("isScheduleInvalid: [%d]\t", isScheduleInvalid);
+    Serial.printf("isHeapMemLow: [%d]\t", isHeapMemLow);
+    Serial.printf("isTimeStampNotSet: [%d]\t", isTimeStampNotSet);
+    Serial.printf("arduinoCommandError: [%d]\t", arduinoCommandError);
+    long rssi = WiFi.RSSI();
+    isRSSIWeak = (rssi <= (long)-80) ? (uint8_t)1 : (uint8_t)0;
+    Serial.printf("isRSSI(%d)Weak: [%d]\n\r", rssi, isRSSIWeak);
+  #endif
 }
 
 uint8_t generateStatusWord() {
