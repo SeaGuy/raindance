@@ -7,7 +7,7 @@
 [![Keep a Changelog badge](https://img.shields.io/badge/Keep%20a%20Changelog-1.0.0-orange.svg?style=for-the-badge)](http://keepachangelog.com)
 [![Semantic Versioning badge](https://img.shields.io/badge/Semantic%20Versioning-2.0.0-orange.svg?style=for-the-badge)](http://semver.org)
 
-## github branch: nano-9::::github SHA: 460f498a40955f7c2f2575d792a876f6de171ccd
+## github branch: nano-9::::github SHA: 3396391da6e872cba897f038a9f4fbbc556f7751
 
 
 This project consists of two main components: an **iOS application** developed in SwiftUI for later model iPhones and an **Arduino ESP32-based sprinkler system**. 
@@ -15,7 +15,7 @@ This project consists of two main components: an **iOS application** developed i
 The iOS app monitors and controls a sprinkler system by sending HTTP commands to an Arduino Nano ESP32 in the sprinkler controller which controls a relay that can power a water pump for sprinkling.
 
 ## Table of Contents
-- [github branch: nano-9::::github SHA: 460f498a40955f7c2f2575d792a876f6de171ccd](#github-branch-nano-9github-sha-460f498a40955f7c2f2575d792a876f6de171ccd)
+- [github branch: nano-9::::github SHA: 3396391da6e872cba897f038a9f4fbbc556f7751](#github-branch-nano-9github-sha-3396391da6e872cba897f038a9f4fbbc556f7751)
 - [Table of Contents](#table-of-contents)
 - [Overview](#overview)
 - [System Components](#system-components)
