@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.8 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.8">
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17">
   <diagram name="Page-1" id="16e2658f-23c8-b752-8be9-c03fbebb8bbe">
     <mxGraphModel dx="1034" dy="523" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
       <root>
@@ -108,7 +108,7 @@
         <mxCell id="76UczLDmgKoUyN9MqhUo-34" value="" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.transmission.terminal_3_phase;pointerEvents=1;direction=west;" parent="76UczLDmgKoUyN9MqhUo-31" vertex="1">
           <mxGeometry x="8" y="11" width="43" height="10" as="geometry" />
         </mxCell>
-        <mxCell id="NoVvPRvszFr26SJCoXZp-19" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1.093;entryY=0.6;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="NoVvPRvszFr26SJCoXZp-12" target="76UczLDmgKoUyN9MqhUo-34" edge="1">
+        <mxCell id="NoVvPRvszFr26SJCoXZp-19" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1.093;entryY=0.6;entryDx=0;entryDy=0;entryPerimeter=0;exitX=-0.058;exitY=0.9;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="NoVvPRvszFr26SJCoXZp-12" target="76UczLDmgKoUyN9MqhUo-34" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="611.8400000000001" y="598" as="targetPoint" />
             <mxPoint x="586" y="328" as="sourcePoint" />
