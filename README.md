@@ -23,7 +23,7 @@ The iOS app monitors and controls a sprinkler system by sending HTTP commands to
     - [Features](#features)
     - [Requirements](#requirements)
     - [Installation](#installation)
-  - [Sprinkler Controller](#sprinkler-controller)
+  - [Sprinkler Controller Firmware](#sprinkler-controller)
     - [Features](#features-1)
     - [Hardware Setup](#hardware-setup)
     - [Arduino Sketch](#arduino-sketch)
@@ -56,20 +56,46 @@ This sprinkler control system enables you to manage and automate watering schedu
 - Network access to communicate with the Arduino device.
 
 #### Installation
-1. Download the source code or clone the repository:
-   \``bash
-   git clone https://github.com/yourusername/sprinkler-app.git
-   \``
-2. Open the project in Xcode.
+1. Go to your git directory
+    ```zsh
+    cd ~/git
+    ```
+2. Clone the repository:
+   ```zsh
+   git clone git@github.com:SeaGuy/raindance.git
+   ```
+2. Open the project (~/Project/git/raindance/src/raindance) in Xcode.
 3. Build and run the application on your iOS device.
 
-### Sprinkler Controller
+### Sprinkler Controller Firmware
 
 #### Features
 - Receives and processes HTTP commands from the iOS app.
 - Controls a relay to activate or deactivate the water pump.
 - Manages schedules and timing of watering.
 - Monitors and sends back system status updates to the app.
+
+#### Requirements
+- Arduino Nano ESP32 microprocessor
+- Arduino IDE 
+
+#### Firmware Installation
+1. Clone the entire repository from github if needed.
+
+   ```zsh
+   git clone git@github.com:SeaGuy/raindance.git
+   ```
+2. Use the Arduino IDE *Library Manager* to install the necessary libraries 
+- <TimeLib.h>, Time by Michale Margolis
+- <TimeAlarms.h>, TimeAlarms by Michale Margolis
+- `WiFiNINA`
+- <ArduinoHttpClient.h>, ArduinoHttpClient by Arduino
+- <Arduino_JSON.h>, Arduino_JSON by Arduino
+- <NTPClient.h>, NTPClient by Fabrice Weinberg
+3. Upload the sketch to the Arduino Nano ESP32 via the Arduino IDE.
+- troubleshooting:  https://support.arduino.cc/hc/en-us/articles/9810414060188-Reset-the-Arduino-bootloader-on-the-Nano-ESP32 
+
+
 
 #### Hardware Setup
 - **Arduino Nano ESP32**: The core microcontroller for the project.
@@ -92,14 +118,6 @@ The active Arduino pins are:
 
 ![This is a alt text.](/images/proto-board-wiring-3.jpeg)
 
-#### Arduino Sketch
-1. Download or copy the Arduino sketch from the `/arduino` folder.
-2. Install the necessary libraries (`WiFiNINA`, `ArduinoHttpClient`, etc.).
-3. Upload the sketch to the Arduino Nano ESP32 via the Arduino IDE.
-
-   \``bash
-   git clone https://github.com/yourusername/sprinkler-firmware.git
-   \``
 
 ## HTTP Commands
 

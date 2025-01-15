@@ -58,7 +58,7 @@ address   type        description of value
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-// #define DEBUG // *********** TURN ON/OFF SERIAL LOGGING
+#define DEBUG // *********** TURN ON/OFF SERIAL LOGGING
 
 // EEPROM settings
 #define EEPROM_SIZE 128
