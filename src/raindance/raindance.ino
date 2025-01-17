@@ -73,7 +73,7 @@ address   type        description of value
 #define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
-#define INTER_ZONE_DELAY_SECONDS 30           // 30-second pause to let the manifold reset to the next zone
+#define INTER_ZONE_DELAY_SECONDS 60           // 30-second pause to let the manifold reset to the next zone
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
