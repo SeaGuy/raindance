@@ -86,13 +86,13 @@ address   type        description of value
 #define APP_IND_DELAY 4096
 
 
-// Global variables
-AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
-AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
-AlarmID_t getSetCurrentTimeAlarmID; 
-AlarmID_t onAlarmID;
-AlarmID_t offAlarmID;
-AlarmID_t retryGetTimeAlarmID;
+// Global variables store the alarm IDs and initialized to an invalild alarm ID
+AlarmID_t schedAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS] = dtINVALID_ALARM_ID;
+AlarmID_t getSetCurrentTimeAlarmID = dtINVALID_ALARM_ID; 
+AlarmID_t onAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t offAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t retryGetTimeAlarmID = dtINVALID_ALARM_ID;
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
