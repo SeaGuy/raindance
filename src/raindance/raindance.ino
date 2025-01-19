@@ -316,8 +316,11 @@ void getScheduleFromEEPROM() {
   bool success = false;
   uint16_t value = 0x0000;
   uint8_t numZones =    (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_ZONES);
+  delay(64);
   uint8_t numMinutes =  (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_MINUTES);
+  delay(64);
   uint8_t numScheds =   (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_SCHEDS);
+  delay(64);
 
   SprinklerSchedule eepromSchedule;
 
@@ -355,8 +358,11 @@ void writeScheduleToEEPROM() {
   #endif
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);  
   EEPROM.write(EEPROM_ADDR_NUM_ZONES, mySprinklerSchedule.zones & 0xFF);
+  delay(64);
   EEPROM.write(EEPROM_ADDR_NUM_MINUTES, mySprinklerSchedule.durationMinutes & 0xFF);
+  delay(64);
   EEPROM.write(EEPROM_ADDR_NUM_SCHEDS, mySprinklerSchedule.numberOfTimeSchedules & 0xFF);
+  delay(64);
   for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
     TimeSchedule myTimeSchedule = mySprinklerSchedule.myTimeSchedule[i];
     uint16_t myBitField = createSprinklerTimeScheduleBitfield(myTimeSchedule);
@@ -698,7 +704,7 @@ void GetSetCurrentTime() {
     Serial.println("GetSetCurrentTime->response: " + response);
     retries--;
     httpTimeClient.stop();
-    delay(1024);  // Delay 1 second between retries
+    delay(1024);  // delay 1 second between retries
   }
   if (statusCode == 200) {
     JSONVar myObject = JSON.parse(response);
@@ -710,7 +716,7 @@ void GetSetCurrentTime() {
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
     Alarm.free(retryGetTimeAlarmID);
-    Delay(512);
+    delay(512);
     retryGetTimeAlarmID = Alarm.timerOnce(180, GetSetCurrentTime);   // call once after 180 mseconds
   }
 }
@@ -718,8 +724,10 @@ void GetSetCurrentTime() {
 void writeUint16ToEEPROM(int address, uint16_t value) {
     // Write each byte of the uint16_t value into EEPROM
     EEPROM.write(address, (value >> 8) & 0xFF);     // Most significant byte
+    delay(64);
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address) + "]->value: " + String((value >> 8) & 0xFF));
     EEPROM.write(address + 1, value & 0xFF);            // Least significant byte
+    delay(64);
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address + 1) + "]->value: " + String(value & 0xFF));
     EEPROM.commit(); // Commit changes to EEPROM
 }
@@ -728,6 +736,7 @@ uint16_t readUint16FromEEPROM(int address) {
     // Read each byte from the EEPROM and reconstruct the uint16_t value
     uint16_t value = 0;
     value |= ((uint16_t)EEPROM.read(address) << 8);
+    delay(64);
     value |= (uint16_t)EEPROM.read(address + 1);
     //Serial.println("readUint16FromEEPROM<" + String(address) + ">: " + String(value));
     return value;
@@ -770,6 +779,7 @@ void eepromDump(int maxAddress) {
   uint8_t value = 0;
   for (int i = 0; i <= maxAddress; i++) {
     value = EEPROM.read(i);
+    delay(64);
     // Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
   }
 }
@@ -779,6 +789,7 @@ void clearEEPROM() {
   Serial.println("clearEEPROM->maxEEPROMAddress: " + String(maxEEPROMAddress));
   for (int addr = 0; addr <= maxEEPROMAddress; addr++) {
     EEPROM.write(addr, (uint8_t)0x00);
+    delay(64);
   }
   EEPROM.commit();
 }
@@ -845,18 +856,18 @@ void clearAlarms() {
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
     //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
-    Delay(512);
+    delay(512);
   }
   // next clear the get-set-time alarm
   //Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
   Alarm.free(getSetCurrentTimeAlarmID);
-  Delay(512);
+  delay(512);
   //Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
   Alarm.free(onAlarmID);
-  Delay(512);
+  delay(512);
   //Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
   Alarm.free(offAlarmID);
-  Delay(512);
+  delay(512);
   //Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
   Alarm.free(retryGetTimeAlarmID);
 }
