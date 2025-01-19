@@ -188,7 +188,7 @@ Content-Type: application/json
 1. [1/17/2025] Seeing this during board initialization:  "PrintSprinklerSchedule()->scheduleName: <k�?>::zones: <255>::durationMinutes: <255>::numberOfTimeSchedules: <255>
 PrintSprinkSerial port connected"
 2. [1/18/2025] send current schedule to iPhone.  Is there room for two clocks or times?
-3.
+3. [1/19/2025] if schedule is not valid at powerup, a default shedule is used.  But then a schedule cannot be added from the app:  "Limit Reached" popup.
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.

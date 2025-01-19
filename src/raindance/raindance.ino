@@ -236,18 +236,7 @@ void setup() {
   eepromDump(EEPROM_MAX_ADDRESS);
   delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
-  if (validateSchedule(mySprinklerSchedule)) {
-    #ifdef DEBUG
-      Serial.println("setup->validateSchedule->schedule is valid ...");
-    #endif
-    isScheduleInvalid = 0;
-  } else {
-      #ifdef DEBUG
-        Serial.println("setup->validateSchedule->schedule is not valid; setting deafult schedule ...");
-      #endif
-      setDefaultSchedule();
-      isScheduleInvalid = 1;
-  };
+  if (validateSchedule(mySprinklerSchedule)) { isScheduleInvalid = 0; } else { setDefaultSchedule(); isScheduleInvalid = 1; };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(APP_GRN_DELAY);
   setupAlarms();
