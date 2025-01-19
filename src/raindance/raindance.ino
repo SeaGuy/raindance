@@ -710,6 +710,7 @@ void GetSetCurrentTime() {
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
     Alarm.free(retryGetTimeAlarmID);
+    Delay(512);
     retryGetTimeAlarmID = Alarm.timerOnce(180, GetSetCurrentTime);   // call once after 180 mseconds
   }
 }
@@ -844,14 +845,18 @@ void clearAlarms() {
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
     //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
+    Delay(512);
   }
   // next clear the get-set-time alarm
   //Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
   Alarm.free(getSetCurrentTimeAlarmID);
+  Delay(512);
   //Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
   Alarm.free(onAlarmID);
+  Delay(512);
   //Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
   Alarm.free(offAlarmID);
+  Delay(512);
   //Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
   Alarm.free(retryGetTimeAlarmID);
 }
