@@ -222,12 +222,7 @@ void setup() {
   // Set timeout for HTTP requests
   wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
   // Initialize EEPROM
-  if (!EEPROM.begin(EEPROM_SIZE)) {
-    #ifdef DEBUG
-      Serial.println("Failed to initialise EEPROM");
-    #endif
-    return;
-  }
+  if (!EEPROM.begin(EEPROM_SIZE)) { Serial.println("Failed to initialise EEPROM"); return; }
   delay(APP_GRN_DELAY);
   server.begin();
   delay(APP_GRN_DELAY);
@@ -389,7 +384,9 @@ void setupAlarms() {
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
     timeDayOfWeek_t dowEnum = convertInt2DOW(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
     schedAlarmID = Alarm.alarmRepeat(dowEnum, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
+    delay(1024);
     schedAlarmIDArray[i] = schedAlarmID;
+    delay(1024);
     }
     getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
   }
@@ -574,7 +571,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("processScheduleCommand->Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", timeString: " + timeString);
   }
   success = validateSchedule(aSprinklerSchedule);
-  responseObj["status"] = success ? "Schedule updated" : "Schedule NOT updated";
+  responseObj["status"] = success ? "Schedule updated" : "Schedule NOT updated; using default";
   if (success) {
     Serial.println("processScheduleCommand->schedule validated");
     deepCopySprinklerSchedule(aSprinklerSchedule, mySprinklerSchedule);
@@ -588,6 +585,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     setupAlarms();
   } else {
       Serial.println("processScheduleCommand->schedule NOT updated");
+      setDefaultSchedule();
       PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   }
   return success;
