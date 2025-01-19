@@ -184,5 +184,11 @@ Content-Type: application/json
    - Set a schedule by specifying the start time and duration.
 3. The app will communicate with the Arduino to send commands and display the status of the sprinkler system.
 
+## Issues
+1. [1/17/2025] Seeing this during board initialization:  "PrintSprinklerSchedule()->scheduleName: <k�?>::zones: <255>::durationMinutes: <255>::numberOfTimeSchedules: <255>
+PrintSprinkSerial port connected"
+2. [1/18/2025] send current schedule to iPhone.  Is there room for two clocks or times?
+3.
+
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.

@@ -88,11 +88,11 @@ address   type        description of value
 
 // Global variables store the alarm IDs and initialized to an invalild alarm ID
 AlarmID_t schedAlarmID = dtINVALID_ALARM_ID;
-AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS] = dtINVALID_ALARM_ID;
 AlarmID_t getSetCurrentTimeAlarmID = dtINVALID_ALARM_ID; 
 AlarmID_t onAlarmID = dtINVALID_ALARM_ID;
 AlarmID_t offAlarmID = dtINVALID_ALARM_ID;
 AlarmID_t retryGetTimeAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -211,6 +211,9 @@ void setup() {
   #ifdef DEBUG
     setupSerial();
   #endif
+  for (int i = 0; i < MAX_NUM_SCHEDS; i++) {
+    schedAlarmIDArray[i] = dtINVALID_ALARM_ID;
+  }
   delay(APP_GRN_DELAY);
   setupRelay();
   delay(APP_GRN_DELAY);
@@ -240,8 +243,9 @@ void setup() {
     isScheduleInvalid = 0;
   } else {
       #ifdef DEBUG
-        Serial.println("setup->validateSchedule->schedule is not valid ...");
+        Serial.println("setup->validateSchedule->schedule is not valid; setting deafult schedule ...");
       #endif
+      setDefaultSchedule();
       isScheduleInvalid = 1;
   };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
@@ -330,7 +334,21 @@ void getScheduleFromEEPROM() {
   uint8_t numZones =    (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_ZONES);
   uint8_t numMinutes =  (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_MINUTES);
   uint8_t numScheds =   (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_SCHEDS);
+
   SprinklerSchedule eepromSchedule;
+
+  if (numZones < 1 || numZones > MAX_NUM_ZONES) { numZones = 3; }
+  if (numMinutes < 1 || numMinutes > 60) { numMinutes = 40; }
+  if (numScheds < 1 || numScheds > MAX_NUM_SCHEDS) { numScheds = 2; }
+
+  #ifdef DEBUG
+    Serial.print("numZones: ");
+    Serial.println(numZones);
+    Serial.print("numMinutes: ");
+    Serial.println(numMinutes);
+    Serial.print("numScheds: ");
+    Serial.println(numScheds);
+  #endif
   eepromSchedule.zones = numZones;
   eepromSchedule.durationMinutes = numMinutes;
   eepromSchedule.numberOfTimeSchedules = numScheds;
@@ -630,11 +648,19 @@ bool PrintCurrentTime() {
   return isTimeSet;
 }
 
-void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule) {
-  char params[256];
-  sprintf(params, "PrintSprinklerSchedule()->scheduleName: <%s>::zones: <%d>::durationMinutes: <%d>::numberOfTimeSchedules: <%d>", scheduleName, theSchedule.zones, theSchedule.durationMinutes, theSchedule.numberOfTimeSchedules);
+void PrintSprinklerSchedule(char* scheduleName, SprinklerSchedule theSchedule) {
+  //char params[256];
+  //sprintf(params, "PrintSprinklerSchedule()->scheduleName: <%s>::zones: <%d>::durationMinutes: <%d>::numberOfTimeSchedules: <%d>", scheduleName, theSchedule.zones, theSchedule.durationMinutes, theSchedule.numberOfTimeSchedules);
   #ifdef DEBUG
-    Serial.println(params);
+    //Serial.println(params);
+    Serial.print("PrintSprinklerSchedule()->scheduleName: <");
+    Serial.print(scheduleName);
+    Serial.print(">::zones: <");
+    Serial.print(theSchedule.zones);
+    Serial.print(">::durationMinutes: <");
+    Serial.print(theSchedule.durationMinutes);
+    Serial.print(">::numberOfTimeSchedules: <");
+    Serial.println(theSchedule.numberOfTimeSchedules);
   #endif
       
   PrintSprinklerTimeSchedule(theSchedule, theSchedule.numberOfTimeSchedules);
