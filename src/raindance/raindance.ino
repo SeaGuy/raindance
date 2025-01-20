@@ -58,7 +58,7 @@ address   type        description of value
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-// #define DEBUG // *********** TURN ON/OFF SERIAL LOGGING
+#define DEBUG // *********** TURN ON/OFF SERIAL LOGGING
 
 // EEPROM settings
 #define EEPROM_SIZE 128
@@ -73,7 +73,7 @@ address   type        description of value
 #define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
-#define INTER_ZONE_DELAY_SECONDS 30           // 30-second pause to let the manifold reset to the next zone
+#define INTER_ZONE_DELAY_SECONDS 60           // 30-second pause to let the manifold reset to the next zone
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
@@ -86,13 +86,13 @@ address   type        description of value
 #define APP_IND_DELAY 4096
 
 
-// Global variables
-AlarmID_t schedAlarmID;                         // Variable to store the alarm ID
+// Global variables store the alarm IDs and initialized to an invalild alarm ID
+AlarmID_t schedAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t getSetCurrentTimeAlarmID = dtINVALID_ALARM_ID; 
+AlarmID_t onAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t offAlarmID = dtINVALID_ALARM_ID;
+AlarmID_t retryGetTimeAlarmID = dtINVALID_ALARM_ID;
 AlarmID_t schedAlarmIDArray[MAX_NUM_SCHEDS];
-AlarmID_t getSetCurrentTimeAlarmID; 
-AlarmID_t onAlarmID;
-AlarmID_t offAlarmID;
-AlarmID_t retryGetTimeAlarmID;
 
 int eepromAddrNumSchedules = 0; // stored at first address
 uint16_t sprinklerTimeScheduleBitfield = 0x00;
@@ -211,6 +211,9 @@ void setup() {
   #ifdef DEBUG
     setupSerial();
   #endif
+  for (int i = 0; i < MAX_NUM_SCHEDS; i++) {
+    schedAlarmIDArray[i] = dtINVALID_ALARM_ID;
+  }
   delay(APP_GRN_DELAY);
   setupRelay();
   delay(APP_GRN_DELAY);
@@ -219,12 +222,7 @@ void setup() {
   // Set timeout for HTTP requests
   wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
   // Initialize EEPROM
-  if (!EEPROM.begin(EEPROM_SIZE)) {
-    #ifdef DEBUG
-      Serial.println("Failed to initialise EEPROM");
-    #endif
-    return;
-  }
+  if (!EEPROM.begin(EEPROM_SIZE)) { Serial.println("Failed to initialise EEPROM"); return; }
   delay(APP_GRN_DELAY);
   server.begin();
   delay(APP_GRN_DELAY);
@@ -233,17 +231,7 @@ void setup() {
   eepromDump(EEPROM_MAX_ADDRESS);
   delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
-  if (validateSchedule(mySprinklerSchedule)) {
-    #ifdef DEBUG
-      Serial.println("setup->validateSchedule->schedule is valid ...");
-    #endif
-    isScheduleInvalid = 0;
-  } else {
-      #ifdef DEBUG
-        Serial.println("setup->validateSchedule->schedule is not valid ...");
-      #endif
-      isScheduleInvalid = 1;
-  };
+  if (validateSchedule(mySprinklerSchedule)) { isScheduleInvalid = 0; } else { setDefaultSchedule(); isScheduleInvalid = 1; };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(APP_GRN_DELAY);
   setupAlarms();
@@ -328,9 +316,26 @@ void getScheduleFromEEPROM() {
   bool success = false;
   uint16_t value = 0x0000;
   uint8_t numZones =    (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_ZONES);
+  delay(64);
   uint8_t numMinutes =  (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_MINUTES);
+  delay(64);
   uint8_t numScheds =   (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_SCHEDS);
+  delay(64);
+
   SprinklerSchedule eepromSchedule;
+
+  if (numZones < 1 || numZones > MAX_NUM_ZONES) { numZones = 3; }
+  if (numMinutes < 1 || numMinutes > 60) { numMinutes = 40; }
+  if (numScheds < 1 || numScheds > MAX_NUM_SCHEDS) { numScheds = 2; }
+
+  #ifdef DEBUG
+    Serial.print("numZones: ");
+    Serial.println(numZones);
+    Serial.print("numMinutes: ");
+    Serial.println(numMinutes);
+    Serial.print("numScheds: ");
+    Serial.println(numScheds);
+  #endif
   eepromSchedule.zones = numZones;
   eepromSchedule.durationMinutes = numMinutes;
   eepromSchedule.numberOfTimeSchedules = numScheds;
@@ -353,8 +358,11 @@ void writeScheduleToEEPROM() {
   #endif
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);  
   EEPROM.write(EEPROM_ADDR_NUM_ZONES, mySprinklerSchedule.zones & 0xFF);
+  delay(64);
   EEPROM.write(EEPROM_ADDR_NUM_MINUTES, mySprinklerSchedule.durationMinutes & 0xFF);
+  delay(64);
   EEPROM.write(EEPROM_ADDR_NUM_SCHEDS, mySprinklerSchedule.numberOfTimeSchedules & 0xFF);
+  delay(64);
   for (int i = 0; i < mySprinklerSchedule.numberOfTimeSchedules; i++) {
     TimeSchedule myTimeSchedule = mySprinklerSchedule.myTimeSchedule[i];
     uint16_t myBitField = createSprinklerTimeScheduleBitfield(myTimeSchedule);
@@ -382,7 +390,9 @@ void setupAlarms() {
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
     timeDayOfWeek_t dowEnum = convertInt2DOW(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
     schedAlarmID = Alarm.alarmRepeat(dowEnum, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
+    delay(1024);
     schedAlarmIDArray[i] = schedAlarmID;
+    delay(1024);
     }
     getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
   }
@@ -567,7 +577,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("processScheduleCommand->Schedule Entry " + String(i + 1) + ": Day " + String(dayOfWeek) + ", timeString: " + timeString);
   }
   success = validateSchedule(aSprinklerSchedule);
-  responseObj["status"] = success ? "Schedule updated" : "Schedule NOT updated";
+  responseObj["status"] = success ? "Schedule updated" : "Schedule NOT updated; using default";
   if (success) {
     Serial.println("processScheduleCommand->schedule validated");
     deepCopySprinklerSchedule(aSprinklerSchedule, mySprinklerSchedule);
@@ -581,6 +591,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     setupAlarms();
   } else {
       Serial.println("processScheduleCommand->schedule NOT updated");
+      setDefaultSchedule();
       PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   }
   return success;
@@ -630,11 +641,19 @@ bool PrintCurrentTime() {
   return isTimeSet;
 }
 
-void PrintSprinklerSchedule(String scheduleName, SprinklerSchedule theSchedule) {
-  char params[256];
-  sprintf(params, "PrintSprinklerSchedule()->scheduleName: <%s>::zones: <%d>::durationMinutes: <%d>::numberOfTimeSchedules: <%d>", scheduleName, theSchedule.zones, theSchedule.durationMinutes, theSchedule.numberOfTimeSchedules);
+void PrintSprinklerSchedule(char* scheduleName, SprinklerSchedule theSchedule) {
+  //char params[256];
+  //sprintf(params, "PrintSprinklerSchedule()->scheduleName: <%s>::zones: <%d>::durationMinutes: <%d>::numberOfTimeSchedules: <%d>", scheduleName, theSchedule.zones, theSchedule.durationMinutes, theSchedule.numberOfTimeSchedules);
   #ifdef DEBUG
-    Serial.println(params);
+    //Serial.println(params);
+    Serial.print("PrintSprinklerSchedule()->scheduleName: <");
+    Serial.print(scheduleName);
+    Serial.print(">::zones: <");
+    Serial.print(theSchedule.zones);
+    Serial.print(">::durationMinutes: <");
+    Serial.print(theSchedule.durationMinutes);
+    Serial.print(">::numberOfTimeSchedules: <");
+    Serial.println(theSchedule.numberOfTimeSchedules);
   #endif
       
   PrintSprinklerTimeSchedule(theSchedule, theSchedule.numberOfTimeSchedules);
@@ -685,7 +704,7 @@ void GetSetCurrentTime() {
     Serial.println("GetSetCurrentTime->response: " + response);
     retries--;
     httpTimeClient.stop();
-    delay(1024);  // Delay 1 second between retries
+    delay(1024);  // delay 1 second between retries
   }
   if (statusCode == 200) {
     JSONVar myObject = JSON.parse(response);
@@ -697,6 +716,7 @@ void GetSetCurrentTime() {
   } else {
     Serial.println("Failed to get time; trying again in 3 minutes");
     Alarm.free(retryGetTimeAlarmID);
+    delay(512);
     retryGetTimeAlarmID = Alarm.timerOnce(180, GetSetCurrentTime);   // call once after 180 mseconds
   }
 }
@@ -704,8 +724,10 @@ void GetSetCurrentTime() {
 void writeUint16ToEEPROM(int address, uint16_t value) {
     // Write each byte of the uint16_t value into EEPROM
     EEPROM.write(address, (value >> 8) & 0xFF);     // Most significant byte
+    delay(64);
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address) + "]->value: " + String((value >> 8) & 0xFF));
     EEPROM.write(address + 1, value & 0xFF);            // Least significant byte
+    delay(64);
     Serial.println("writeUint16ToEEPROM[eepromAddress: " + String(address + 1) + "]->value: " + String(value & 0xFF));
     EEPROM.commit(); // Commit changes to EEPROM
 }
@@ -714,6 +736,7 @@ uint16_t readUint16FromEEPROM(int address) {
     // Read each byte from the EEPROM and reconstruct the uint16_t value
     uint16_t value = 0;
     value |= ((uint16_t)EEPROM.read(address) << 8);
+    delay(64);
     value |= (uint16_t)EEPROM.read(address + 1);
     //Serial.println("readUint16FromEEPROM<" + String(address) + ">: " + String(value));
     return value;
@@ -756,6 +779,7 @@ void eepromDump(int maxAddress) {
   uint8_t value = 0;
   for (int i = 0; i <= maxAddress; i++) {
     value = EEPROM.read(i);
+    delay(64);
     // Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
   }
 }
@@ -765,6 +789,7 @@ void clearEEPROM() {
   Serial.println("clearEEPROM->maxEEPROMAddress: " + String(maxEEPROMAddress));
   for (int addr = 0; addr <= maxEEPROMAddress; addr++) {
     EEPROM.write(addr, (uint8_t)0x00);
+    delay(64);
   }
   EEPROM.commit();
 }
@@ -831,14 +856,18 @@ void clearAlarms() {
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
     //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
+    delay(512);
   }
   // next clear the get-set-time alarm
   //Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
   Alarm.free(getSetCurrentTimeAlarmID);
+  delay(512);
   //Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
   Alarm.free(onAlarmID);
+  delay(512);
   //Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
   Alarm.free(offAlarmID);
+  delay(512);
   //Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
   Alarm.free(retryGetTimeAlarmID);
 }
