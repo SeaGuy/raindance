@@ -587,7 +587,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("processScheduleCommand->schedule written to EEPROM");
     PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
     Serial.println("processScheduleCommand->ensure sprinkler off");
-    ScheduledSprinklerOff();
+    digitalWrite(relayPin, LOW);
     Serial.println("processScheduleCommand->setting new alarms");
     setupAlarms();
   } else {
