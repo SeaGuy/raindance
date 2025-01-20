@@ -599,6 +599,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
 }
 
 void ScheduledSprinklerOn() {
+  Serial.println("ScheduledSprinklerOn->zones: <<<ON>>>" + String(zones));
   int duration = 0;
   digitalWrite(relayPin, HIGH);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
@@ -607,7 +608,6 @@ void ScheduledSprinklerOn() {
 }
 
 void ScheduledSprinklerOff() {
-  Serial.println("ScheduledSprinklerOff->zones: " + String(zones));
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
@@ -615,6 +615,7 @@ void ScheduledSprinklerOff() {
   } else {
     zones = (int)(mySprinklerSchedule.zones);
   }
+  Serial.println("ScheduledSprinklerOff->zones: <<<OFF>>> " + String(zones));
 }
 
 bool PrintCurrentTime() {
@@ -781,7 +782,7 @@ void eepromDump(int maxAddress) {
   for (int i = 0; i <= maxAddress; i++) {
     value = EEPROM.read(i);
     delay(64);
-    // Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
+    Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
   }
 }
 
@@ -855,7 +856,7 @@ void clearAlarms() {
   #endif
   // first clear scheduling alarms
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
-    //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
+    Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
     delay(512);
   }
