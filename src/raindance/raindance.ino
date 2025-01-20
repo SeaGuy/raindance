@@ -208,6 +208,7 @@ uint8_t isRSSIWeak = (uint8_t)1;
 uint8_t arduinoCommandError = (uint8_t)1;
 
 void setup() {
+  delay(512);     // ChatGPT says some ESP32 boards are sensitive to fast power-ups and recommends adding delay
   #ifdef DEBUG
     setupSerial();
   #endif
@@ -586,7 +587,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("processScheduleCommand->schedule written to EEPROM");
     PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
     Serial.println("processScheduleCommand->ensure sprinkler off");
-    ScheduledSprinklerOff();
+    digitalWrite(relayPin, LOW);
     Serial.println("processScheduleCommand->setting new alarms");
     setupAlarms();
   } else {
@@ -598,6 +599,7 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
 }
 
 void ScheduledSprinklerOn() {
+  Serial.println("ScheduledSprinklerOn->zones: <<<ON>>>" + String(zones));
   int duration = 0;
   digitalWrite(relayPin, HIGH);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
@@ -606,7 +608,6 @@ void ScheduledSprinklerOn() {
 }
 
 void ScheduledSprinklerOff() {
-  Serial.println("ScheduledSprinklerOff->zones: " + String(zones));
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
@@ -614,6 +615,7 @@ void ScheduledSprinklerOff() {
   } else {
     zones = (int)(mySprinklerSchedule.zones);
   }
+  Serial.println("ScheduledSprinklerOff->zones: <<<OFF>>> " + String(zones));
 }
 
 bool PrintCurrentTime() {
@@ -780,7 +782,7 @@ void eepromDump(int maxAddress) {
   for (int i = 0; i <= maxAddress; i++) {
     value = EEPROM.read(i);
     delay(64);
-    // Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
+    Serial.println("eepromDump->address<" + String(i) + ">: " +  String(value));
   }
 }
 
@@ -854,7 +856,7 @@ void clearAlarms() {
   #endif
   // first clear scheduling alarms
   for (int i =0; i < MAX_NUM_SCHEDS; i++) {
-    //Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
+    Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
     Alarm.free(schedAlarmIDArray[i]);
     delay(512);
   }
