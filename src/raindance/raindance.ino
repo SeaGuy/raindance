@@ -208,6 +208,7 @@ uint8_t isRSSIWeak = (uint8_t)1;
 uint8_t arduinoCommandError = (uint8_t)1;
 
 void setup() {
+  delay(512);     // ChatGPT says some ESP32 boards are sensitive to fast power-ups and recommends adding delay
   #ifdef DEBUG
     setupSerial();
   #endif
