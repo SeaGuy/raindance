@@ -73,7 +73,7 @@ address   type        description of value
 #define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
-#define INTER_ZONE_DELAY_SECONDS 60           // 30-second pause to let the manifold reset to the next zone
+#define INTER_ZONE_DELAY_SECONDS 30           // 30-second pause to let the manifold reset to the next zone
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
@@ -132,7 +132,6 @@ void setupRelay();
 void connectToWiFi();
 void getScheduleFromEEPROM();
 void writeScheduleToEEPROM();
-void setupScheduleAlarms();
 void handleClientRequests();
 void handleGetRequest(String command, JSONVar& responseObj);
 void handlePostRequest(WiFiClient& client, JSONVar& responseObj);
@@ -152,6 +151,8 @@ bool validateSchedule(SprinklerSchedule aSprinklerSchedule);
 uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule myTimeSchedule);
 void writeUint16ToEEPROM(int address, uint16_t value);
 bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]);
+void initScheduleAlarms();
+void setupScheduleAlarms();
 void clearScheduleAlarms();
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination);
 void clearEEPROM();
@@ -214,8 +215,8 @@ void setup() {
   #ifdef DEBUG
     setupSerial();
   #endif
-  for (int i = 0; i < MAX_NUM_SCHEDS; i++) { schedAlarmIDArray[i] = dtINVALID_ALARM_ID; }
-  for (int i = 0; i < dtNBR_ALARMS; i++) { Alarm.free(i); }
+  initScheduleAlarms();
+  // for (int i = 0; i < dtNBR_ALARMS; i++) { Alarm.free(i); }
   delay(APP_GRN_DELAY);
   setupRelay();
   delay(APP_GRN_DELAY);
@@ -613,6 +614,7 @@ void ScheduledSprinklerOn() {
 }
 
 void ScheduledSprinklerOff() {
+  if (offAlarmID != dtINVALID_ALARM_ID) { Alarm.free(offAlarmID); offAlarmID = dtINVALID_ALARM_ID; }
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
@@ -620,7 +622,6 @@ void ScheduledSprinklerOff() {
   } else {
     zones = (int)(mySprinklerSchedule.zones);
   }
-  if (offAlarmID != dtINVALID_ALARM_ID) { Alarm.free(offAlarmID); offAlarmID = dtINVALID_ALARM_ID; }
   Serial.println("ScheduledSprinklerOff->zones: <<<OFF>>> " + String(zones));
 }
 
@@ -1178,4 +1179,9 @@ void configureLEDs() {
   pulseLED(_green_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
   delay(APP_GRN_DELAY);
 }
- 
+
+void initScheduleAlarms() {
+  for (int i = 0; i < MAX_NUM_SCHEDS; i++) {
+    schedAlarmIDArray[i] = dtINVALID_ALARM_ID; 
+  }
+}
