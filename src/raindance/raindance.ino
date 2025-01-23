@@ -73,7 +73,7 @@ address   type        description of value
 #define MAX_NUM_SCHEDS 2
 #define MAX_NUM_ZONES 4
 #define MAX_DURATION_PER_ZONE 120
-#define INTER_ZONE_DELAY_SECONDS 60           // 30-second pause to let the manifold reset to the next zone
+#define INTER_ZONE_DELAY_SECONDS 30           // 30-second pause to let the manifold reset to the next zone
 
 #define EEPROM_MAX_ADDRESS (EEPROM_ADDR_FIRST_SCHED + (2 * (MAX_NUM_SCHEDS - 1)) + 1)
 
@@ -132,7 +132,6 @@ void setupRelay();
 void connectToWiFi();
 void getScheduleFromEEPROM();
 void writeScheduleToEEPROM();
-void setupAlarms();
 void handleClientRequests();
 void handleGetRequest(String command, JSONVar& responseObj);
 void handlePostRequest(WiFiClient& client, JSONVar& responseObj);
@@ -152,7 +151,9 @@ bool validateSchedule(SprinklerSchedule aSprinklerSchedule);
 uint16_t createSprinklerTimeScheduleBitfield(TimeSchedule myTimeSchedule);
 void writeUint16ToEEPROM(int address, uint16_t value);
 bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]);
-void clearAlarms();
+void initScheduleAlarms();
+void setupScheduleAlarms();
+void clearScheduleAlarms();
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination);
 void clearEEPROM();
 void setDefaultSchedule();
@@ -166,6 +167,8 @@ bool validateTime();
 void getCurrentTimestamp();
 void statusCheck();
 uint8_t generateStatusWord();
+void configureLEDs();
+void pulseLED(int theLED, int numberPulses, int duration);
 
 // WiFi settings
 const char ssid[] = "ARRIS-439E";
@@ -212,39 +215,24 @@ void setup() {
   #ifdef DEBUG
     setupSerial();
   #endif
-  for (int i = 0; i < MAX_NUM_SCHEDS; i++) {
-    schedAlarmIDArray[i] = dtINVALID_ALARM_ID;
-  }
+  initScheduleAlarms();
+  // for (int i = 0; i < dtNBR_ALARMS; i++) { Alarm.free(i); }
   delay(APP_GRN_DELAY);
   setupRelay();
   delay(APP_GRN_DELAY);
   connectToWiFi();
   delay(APP_GRN_DELAY);
-  // Set timeout for HTTP requests
-  wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
-  // Initialize EEPROM
-  if (!EEPROM.begin(EEPROM_SIZE)) { Serial.println("Failed to initialise EEPROM"); return; }
-  delay(APP_GRN_DELAY);
   server.begin();
   delay(APP_GRN_DELAY);
   getCurrentTimestamp();
-  delay(APP_GRN_DELAY);
-  eepromDump(EEPROM_MAX_ADDRESS);
   delay(APP_GRN_DELAY);
   getScheduleFromEEPROM();
   if (validateSchedule(mySprinklerSchedule)) { isScheduleInvalid = 0; } else { setDefaultSchedule(); isScheduleInvalid = 1; };
   PrintSprinklerSchedule("mySprinklerSchedule", mySprinklerSchedule);
   delay(APP_GRN_DELAY);
-  setupAlarms();
-  // set the LED pins as  outputs
-  pinMode(__blue_led_pin, OUTPUT);
-  pinMode(___red_led_pin, OUTPUT);
-  pinMode(_green_led_pin, OUTPUT);
-  // pulse each LED 3 times to verify working on startup
-  pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
-  pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
-  pulseLED(_green_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
-  delay(APP_GRN_DELAY);
+  clearScheduleAlarms();
+  setupScheduleAlarms();
+  configureLEDs();
 }
 
 void loop() {
@@ -294,8 +282,11 @@ void connectToWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     #ifdef DEBUG
       Serial.println();
-      Serial.print("Connected to WiFi with address ");
-      Serial.println(WiFi.localIP());
+      Serial.print("Connected to WiFi with address <");
+      Serial.print(WiFi.localIP());
+      Serial.print("> and hostname <");
+      Serial.print(WiFi.getHostname());
+      Serial.println(">");
     #endif
     // print the received signal strength:
     long rssi = WiFi.RSSI();
@@ -314,6 +305,11 @@ void connectToWiFi() {
 }
 
 void getScheduleFromEEPROM() {
+  // Initialize EEPROM
+  if (!EEPROM.begin(EEPROM_SIZE)) { Serial.println("Failed to initialise EEPROM"); return; }
+  delay(APP_GRN_DELAY);
+  eepromDump(EEPROM_MAX_ADDRESS);
+  delay(APP_GRN_DELAY);
   bool success = false;
   uint16_t value = 0x0000;
   uint8_t numZones =    (uint8_t)EEPROM.read(EEPROM_ADDR_NUM_ZONES);
@@ -375,27 +371,31 @@ void writeScheduleToEEPROM() {
   EEPROM.commit(); // Commit changes to EEPROM
 }
 
-void setupAlarms() {
+void setupScheduleAlarms() {
   #ifdef DEBUG
-    Serial.println("setupAlarms()");
+    Serial.println("setupScheduleAlarms()");
   #endif
   // set alarms based on mySprinklerSchedule.myTimeSchedule
   // timeDayOfWeek_t is an enum in TimeLib.h {undefined=0, 1=Sunday, 2=Monday, etc.}
   int numScheds = mySprinklerSchedule.numberOfTimeSchedules;
   int myDayOfTheWeek = -1;
   zones = (int)(mySprinklerSchedule.zones);
-  clearAlarms();
+  for (int i = 0; i < numScheds; i++) {
+    if (schedAlarmIDArray[i] != dtINVALID_ALARM_ID) { 
+      Alarm.free(schedAlarmIDArray[i]); 
+      schedAlarmIDArray[i] = dtINVALID_ALARM_ID;
+    }
+  }
   for (int i = 0; i < numScheds; i++) {
     int dayOfTheWeek = (int)mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek;
     int hour = (int)mySprinklerSchedule.myTimeSchedule[i].hour;
     int minute = (int)mySprinklerSchedule.myTimeSchedule[i].minute;
     timeDayOfWeek_t dowEnum = convertInt2DOW(mySprinklerSchedule.myTimeSchedule[i].dayOfTheWeek);
     schedAlarmID = Alarm.alarmRepeat(dowEnum, mySprinklerSchedule.myTimeSchedule[i].hour, mySprinklerSchedule.myTimeSchedule[i].minute, 0, ScheduledSprinklerOn);
-    delay(1024);
+    delay(128);
     schedAlarmIDArray[i] = schedAlarmID;
-    delay(1024);
+    delay(128);
     }
-    getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
   }
 
 void handleClientRequests() {
@@ -447,8 +447,12 @@ void handleGetRequest(String command, JSONVar& responseObj) {
   pulseLED(_green_led_pin, 1, LED_SHORT_BURST_MILLISECONDS);
   arduinoCommandError = 0;
   if (command == "ONN") {
+    if (onAlarmID != dtINVALID_ALARM_ID) { Alarm.free(onAlarmID); onAlarmID = dtINVALID_ALARM_ID; }
+    if (offAlarmID != dtINVALID_ALARM_ID) { Alarm.free(offAlarmID); offAlarmID = dtINVALID_ALARM_ID; }
     digitalWrite(relayPin, HIGH);
   } else if (command == "OFF") {
+      if (onAlarmID != dtINVALID_ALARM_ID) { Alarm.free(onAlarmID); onAlarmID = dtINVALID_ALARM_ID; }
+      if (offAlarmID != dtINVALID_ALARM_ID) { Alarm.free(offAlarmID); offAlarmID = dtINVALID_ALARM_ID; }
       digitalWrite(relayPin, LOW);
   } else if (command == "HI!") {
       // do nothing but prepare a heartbeat response
@@ -589,7 +593,8 @@ bool processScheduleCommand(JSONVar parsedData, JSONVar& responseObj) {
     Serial.println("processScheduleCommand->ensure sprinkler off");
     digitalWrite(relayPin, LOW);
     Serial.println("processScheduleCommand->setting new alarms");
-    setupAlarms();
+    clearScheduleAlarms();
+    setupScheduleAlarms();
   } else {
       Serial.println("processScheduleCommand->schedule NOT updated");
       setDefaultSchedule();
@@ -604,14 +609,16 @@ void ScheduledSprinklerOn() {
   digitalWrite(relayPin, HIGH);
   duration = (int)(mySprinklerSchedule.durationMinutes * 60);
   Serial.println("ScheduledSprinklerOn->duration: " + String(duration) + " seconds;  relay pin: " + String(relayPin));
-  onAlarmID = Alarm.timerOnce(duration, ScheduledSprinklerOff);
+  if (onAlarmID != dtINVALID_ALARM_ID) { Alarm.free(onAlarmID); onAlarmID = dtINVALID_ALARM_ID; }
+  offAlarmID = Alarm.timerOnce(duration, ScheduledSprinklerOff);
 }
 
 void ScheduledSprinklerOff() {
+  if (offAlarmID != dtINVALID_ALARM_ID) { Alarm.free(offAlarmID); offAlarmID = dtINVALID_ALARM_ID; }
   digitalWrite(relayPin, LOW);
   zones = zones - 1;
   if (zones > 0) {
-    offAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
+    onAlarmID = Alarm.timerOnce(INTER_ZONE_DELAY_SECONDS, ScheduledSprinklerOn);
   } else {
     zones = (int)(mySprinklerSchedule.zones);
   }
@@ -678,17 +685,14 @@ void PrintSprinklerTimeSchedule(SprinklerSchedule aSchedule, int numSchedules) {
 
 void GetSetCurrentTime() {
   Serial.println("GetSetCurrentTime()");
-  /*
-  httpTimeClient.get(timeServerAPI);
-  int statusCode = httpTimeClient.responseStatusCode();
-  String response = httpTimeClient.responseBody();
-  */
   int statusCode = 0;
   int retries = NUMBER_TIME_SERVERS;
   String response, datetime;
-
+  // Set timeout for time related HTTP requests
+  wifiTimeClient.setTimeout(5000);  // Set timeout to 5 seconds (5000 ms)
+  delay(512);
   while (retries > 0 && statusCode != 200) {
-    Serial.println("Trying to get date and time ...");
+    Serial.println("GetSetCurrentTime()->Trying to get date and time ...");
     HttpClient httpTimeClient = HttpClient(wifiTimeClient, myTimeServerArray[retries-1].url, myTimeServerArray[retries-1].port);
     httpTimeClient.setHttpResponseTimeout((uint32_t) 4096);
     Serial.print("url: ");
@@ -697,30 +701,41 @@ void GetSetCurrentTime() {
     Serial.println(String(myTimeServerArray[retries-1].port));
     Serial.print("api: ");
     Serial.println(myTimeServerArray[retries-1].api);
-
     httpTimeClient.get(myTimeServerArray[retries-1].api);
-
     statusCode = httpTimeClient.responseStatusCode();
     response = httpTimeClient.responseBody();
-    Serial.println("GetSetCurrentTime->statusCode: " + String(statusCode));
-    Serial.println("GetSetCurrentTime->response: " + response);
+    Serial.println("GetSetCurrentTime()->statusCode: " + String(statusCode));
+    Serial.println("GetSetCurrentTime()->response: " + response);
     retries--;
     httpTimeClient.stop();
     delay(1024);  // delay 1 second between retries
   }
+  Serial.println("GetSetCurrentTime()->clearing existing alarm IDs, if any ...");
+  if (retryGetTimeAlarmID != dtINVALID_ALARM_ID) { 
+    Alarm.free(retryGetTimeAlarmID); 
+    retryGetTimeAlarmID = dtINVALID_ALARM_ID; 
+    Serial.println("GetSetCurrentTime()->clearing retryGetTimeAlarmID");
+  }
+  if (getSetCurrentTimeAlarmID != dtINVALID_ALARM_ID) { 
+    Alarm.free(getSetCurrentTimeAlarmID); 
+    getSetCurrentTimeAlarmID = dtINVALID_ALARM_ID; 
+    Serial.println("GetSetCurrentTime()->clearing retryGetTimeAlarmID");
+  }
+
   if (statusCode == 200) {
     JSONVar myObject = JSON.parse(response);
     if (JSON.typeof(myObject) == "undefined") {
-      Serial.println("Parsing input failed!");
+      Serial.println("GetSetCurrentTime()->Parsing input failed!");
       return;
     }
     myTimeServerArray[retries].function(myObject);
   } else {
-    Serial.println("Failed to get time; trying again in 3 minutes");
-    Alarm.free(retryGetTimeAlarmID);
-    delay(512);
+    Serial.println("GetSetCurrentTime()->Failed to get time; trying again in 3 minutes");
+    delay(128);
     retryGetTimeAlarmID = Alarm.timerOnce(180, GetSetCurrentTime);   // call once after 180 mseconds
   }
+  Serial.println("GetSetCurrentTime()->setting alarm for another call to GetSetCurrentTime() ...");
+  getSetCurrentTimeAlarmID = Alarm.alarmRepeat(5, 0, 0, GetSetCurrentTime); // 5:00 AM every day
 }
 
 void writeUint16ToEEPROM(int address, uint16_t value) {
@@ -850,28 +865,20 @@ bool timeScheduleValidated(uint8_t numScheds, TimeSchedule theTimeSchedule[]) {
   return valid;
 }
 
-void clearAlarms() {
+void clearScheduleAlarms() {
   #ifdef DEBUG
-    Serial.println("clearAlarms()");
+    Serial.println("clearScheduleAlarms()");
   #endif
   // first clear scheduling alarms
-  for (int i =0; i < MAX_NUM_SCHEDS; i++) {
-    Serial.println("clearAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
-    Alarm.free(schedAlarmIDArray[i]);
-    delay(512);
+  int numArrayElements = (sizeof(schedAlarmIDArray[0]) <= 0) ? (uint8_t) 0 : sizeof(schedAlarmIDArray)/sizeof(schedAlarmIDArray[0]);
+  for (int i = 0; i < numArrayElements; i++) {
+    if (schedAlarmIDArray[i] != dtINVALID_ALARM_ID ) {
+      Serial.println("clearScheduleAlarms->clearing schedule alarm ID: " + String(schedAlarmIDArray[i]));
+      Alarm.free(schedAlarmIDArray[i]);
+      schedAlarmIDArray[i] = dtINVALID_ALARM_ID;
+      delay(512);
+    }
   }
-  // next clear the get-set-time alarm
-  //Serial.println("clearAlarms->clearing getSetCurrentTimeAlarmID: " + String(getSetCurrentTimeAlarmID));
-  Alarm.free(getSetCurrentTimeAlarmID);
-  delay(512);
-  //Serial.println("clearAlarms->clearing onAlarmID: " + String(onAlarmID));
-  Alarm.free(onAlarmID);
-  delay(512);
-  //Serial.println("clearAlarms->clearing offAlarmID: " + String(offAlarmID));
-  Alarm.free(offAlarmID);
-  delay(512);
-  //Serial.println("clearAlarms->clearing retryGetTimeAlarmID: " + String(retryGetTimeAlarmID));
-  Alarm.free(retryGetTimeAlarmID);
 }
 
 void deepCopySprinklerSchedule(SprinklerSchedule &source, SprinklerSchedule &destination) {
@@ -1139,6 +1146,15 @@ void statusCheck() {
     long rssi = WiFi.RSSI();
     isRSSIWeak = (rssi <= (long)-80) ? (uint8_t)1 : (uint8_t)0;
     Serial.printf("isRSSI(%d)Weak: [%d]\n\r", rssi, isRSSIWeak);
+
+    Serial.printf("schedAlarmID: [%d]\n\r", schedAlarmID);
+    Serial.printf("getSetCurrentTimeAlarmID: [%d]\n\r", getSetCurrentTimeAlarmID);
+    Serial.printf("onAlarmID: [%d]\n\r", onAlarmID);
+    Serial.printf("offAlarmID: [%d]\n\r", offAlarmID);
+    Serial.printf("retryGetTimeAlarmID: [%d]\n\r", retryGetTimeAlarmID);
+    for (int i = 0; i < sizeof(schedAlarmIDArray)/sizeof(schedAlarmIDArray[0]); i++) {
+      Serial.printf("schedAlarmIDArray[%d]: [%d]\n\r", i, schedAlarmIDArray[i]);
+    }
   #endif
 }
 
@@ -1151,4 +1167,21 @@ uint8_t generateStatusWord() {
   arduinoStatusWord = arduinoStatusWord | arduinoCommandError<<4;     // bit 4
   return arduinoStatusWord;
 }
- 
+
+void configureLEDs() {
+  // set the LED pins as  outputs
+  pinMode(__blue_led_pin, OUTPUT);
+  pinMode(___red_led_pin, OUTPUT);
+  pinMode(_green_led_pin, OUTPUT);
+  // pulse each LED 3 times to verify working on startup
+  pulseLED(__blue_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  pulseLED(___red_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  pulseLED(_green_led_pin, 3, LED_SHORT_BURST_MILLISECONDS);
+  delay(APP_GRN_DELAY);
+}
+
+void initScheduleAlarms() {
+  for (int i = 0; i < MAX_NUM_SCHEDS; i++) {
+    schedAlarmIDArray[i] = dtINVALID_ALARM_ID; 
+  }
+}
