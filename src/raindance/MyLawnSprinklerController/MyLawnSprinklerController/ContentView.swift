@@ -2,9 +2,9 @@ import SwiftUI
 
 struct ContentView: View {
     
-    // let myArduinoIPAddress = "192.168.0.238"     // Arduino Nano WiFi Rev2
-    // let myArduinoIPAddress = "192.168.0.32"         // Arduino Nano ESP32
-    let myArduinoIPAddress = "192.168.0.70"         // spare Arduino Nano ESP32
+    // let myArduinoIPAddress = "192.168.0.238"  // Arduino Nano WiFi Rev2
+    // let myArduinoIPAddress = "192.168.0.32"   // Arduino Nano ESP32          hostname<esp32s3-600DD4>    mac-address<EC:DA:3B:60:0D:D4>
+    let myArduinoIPAddress = "192.168.0.70"      // spare Arduino Nano ESP32    hostname<esp32s3-A21360>    mac-address<74:4d:bd:a2:13:60>
     let HEARTBEAT_INTERVAL: Double = 15
     
     @State private var month = 1

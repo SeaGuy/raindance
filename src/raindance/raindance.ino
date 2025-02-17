@@ -286,6 +286,9 @@ void connectToWiFi() {
       Serial.print(WiFi.localIP());
       Serial.print("> and hostname <");
       Serial.print(WiFi.getHostname());
+      Serial.print(">");
+      Serial.print("> and MAC address <");
+      Serial.print(WiFi.macAddress());
       Serial.println(">");
     #endif
     // print the received signal strength:
