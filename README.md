@@ -26,7 +26,7 @@ The iOS app monitors and controls a sprinkler system by sending HTTP commands to
   - [Sprinkler Controller Firmware](#sprinkler-controller)
     - [Features](#features-1)
     - [Hardware Setup](#hardware-setup)
-    - [Arduino Sketch](#arduino-sketch)
+    - [Firmware Installation](#firmware-installation)
 - [HTTP Commands](#http-commands)
   - [Command List](#command-list)
   - [Example Requests](#example-requests)
@@ -92,6 +92,8 @@ This sprinkler control system enables you to manage and automate watering schedu
 - <ArduinoHttpClient.h>, ArduinoHttpClient by Arduino
 - <Arduino_JSON.h>, Arduino_JSON by Arduino
 - <NTPClient.h>, NTPClient by Fabrice Weinberg
+- <ArduinoOTA.h>, required for OTA updates
+- <ESPmDNS.h>, required for OTA updates (actually part if the ESP32 Arduino core in the Arduino ESP32 Board Manager)
 3. Upload the sketch to the Arduino Nano ESP32 via the Arduino IDE.
 - troubleshooting:  https://support.arduino.cc/hc/en-us/articles/9810414060188-Reset-the-Arduino-bootloader-on-the-Nano-ESP32 
 
