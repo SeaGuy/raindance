@@ -1,16 +1,19 @@
 
-<center><h1> Sprinkler Controller 1.0</h1></center>
+<center><h1> Sprinkler Controller 1.0.1</h1></center>
 
 [![Arduino Library specification badge](https://img.shields.io/badge/Arduino%20Library%20Specification%20-rev%202.1-00878F.svg?style=for-the-badge)](https://github.com/arduino/Arduino/wiki/Arduino-IDE-1.5:-Library-specification)
 [![Arduino IDE compatibility badge](https://img.shields.io/badge/Arduino%20IDE%20compatibility-2.3.3+-00878F.svg?style=for-the-badge)](https://www.arduino.cc/en/Main/Software)
 
-[![Keep a Changelog badge](https://img.shields.io/badge/Keep%20a%20Changelog-1.0.0-orange.svg?style=for-the-badge)](http://keepachangelog.com)
+[![Keep a Changelog badge](https://img.shields.io/badge/Keep%20a%20Changelog-1.0.1-orange.svg?style=for-the-badge)](http://keepachangelog.com)
 [![Semantic Versioning badge](https://img.shields.io/badge/Semantic%20Versioning-2.0.0-orange.svg?style=for-the-badge)](http://semver.org)
 
 ## github branch: nano-9::::github SHA: 3396391da6e872cba897f038a9f4fbbc556f7751
 
 
-This project consists of two main components: an **iOS application** developed in SwiftUI for later model iPhones and an **Arduino ESP32-based sprinkler system**. 
+This project consists of two main components: an **iOS application** developed in SwiftUI for late model iPhones and an **Arduino Nano ESP32-based sprinkler controller assembly**. The sprinkler controller assembly is comprised of mechanical and electrical components, a microcontroller and firmware that runs the microcontroller.
+
+![This is a alt text.](/images/A41BB433-12EE-4F97-A9FA-9D41BFD19718.png)
+
 
 The iOS app monitors and controls a sprinkler system by sending HTTP commands to an Arduino Nano ESP32 in the sprinkler controller which controls a relay that can power a water pump for sprinkling.
 
@@ -38,7 +41,44 @@ The iOS app monitors and controls a sprinkler system by sending HTTP commands to
 
 ## Overview
 
-This sprinkler control system enables you to manage and automate watering schedules for your lawn. The system consists of an iOS app that acts as the user interface and sends control commands to an Arduino Nano ESP32 via HTTP. The Arduino manages the hardware by controlling a relay that activates a water pump for sprinkling.
+This sprinkler control system manages and automates lawn watering schedules. The system consists of an iOS app for the iPhone that acts as the user interface by monitoring sprinkler system status and controlling the system by sending commands to the Arduino Nano ESP32 micorcontroller.
+
+![This is a alt text.](/images/iPhoneAppScreen)
+
+
+The Arduino manages hardware by controlling a relay that either opens or closes a circuit between the 220VAC house electrical service and the water pump.
+
+**NOTE:** The sprinkler system can also be turned on and off manually using the toggle switch mounted via a raised plexiglass platform on the controller assembly (see image below).  The toggle switch positions:
+
+- *up* position:  AUTO closes a circuit between house mains and the relay, so that:
+    - The pump is powered ON when the relay is activated by the microcontroller's scheduler  
+    - The pump is powered OFF when the relay is deactivated by the microcontroller's scheduler
+- *middle* position:   OFF (the pump is powered OFF)
+- *bottom* position:  ON (the pump is powered ON)
+
+<br>
+
+
+![This is a alt text.](/images/IMG_0637.png)
+
+<br>
+
+### System Wiring Diagram
+
+The wiring diagram below shows relationships among electrical components in the sprinkler controller assembly.  
+
+![This is a alt text.](/images/design-drawings-electrical.drawio.png)
+<br>
+
+The components include:
+- Arduino Nano ESP32 microcontroller
+- YYG-2 one way relay
+- 30W switching power supply
+- Single-pole dual-throw (SPDT) toggle switch
+- 5VDC terminal blocks (2)
+- 600VAC/115A power distribution blocks (3)
+- 220VAC/10A circuit breaker
+
 
 ## System Components
 
@@ -101,8 +141,13 @@ This sprinkler control system enables you to manage and automate watering schedu
 
 #### Hardware Setup
 - **Arduino Nano ESP32**: The core microcontroller for the project.
-- **Relay Module**: Controls the water pump.
-  
+- **Relay Module**: When activated by the micorcontroller, it closes the normally open (NO) circuit between house mains and the water pump.
+     - YYG-2  one-way relay module
+     - Switched Input/Output: 250VAC/30A
+     - Power supply: 5VDC
+
+<br>
+
 ![This is a alt text.](/images/relay-1.jpg)
 
 - **Water Pump**: Performs the actual sprinkling.
