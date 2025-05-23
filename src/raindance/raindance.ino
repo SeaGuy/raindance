@@ -1196,7 +1196,8 @@ void initScheduleAlarms() {
 }
 
 void setupOTA() {
-  ArduinoOTA.setHostname("raindance-esp32");
+  Serial.println("setupOTA()");
+  ArduinoOTA.setHostname("raindance-esp32-OTA");
 
   ArduinoOTA.onStart([]() {
     String type;
@@ -1225,7 +1226,7 @@ void setupOTA() {
   });
 
   ArduinoOTA.begin();
-  ArduinoOTA.setPassword("7%04spiriT");
+  //ArduinoOTA.setPassword("7%04spiriT");
   Serial.println("OTA Ready");
 }
 
